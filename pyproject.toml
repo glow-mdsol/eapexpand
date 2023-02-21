@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "pkt"
+name = "eapexpand"
 version = "0.1.0"
 description = "Simple EAP file expansion tool"
 authors = ["Geoff Low <glow@mdsol.com>"]
