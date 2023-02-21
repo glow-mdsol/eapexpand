@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "pkt"
+version = "0.1.0"
+description = "Simple EAP file expansion tool"
+authors = ["Geoff Low <glow@mdsol.com>"]
+readme = "README.md"
+packages = [
+    {include = "eapexpand", from = "src"},
+]
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+openpyxl = "^3.0.10"
+dataclasses-json = "^0.5.7"
+mdb-parser = "^0.0.3"
+
+[tool.poetry.scripts]
+expand="eapexpand.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
