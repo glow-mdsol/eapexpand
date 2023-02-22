@@ -1,6 +1,11 @@
 #!/bin/bash
 BRANCH=${1:-main}
 
+if [! -d input ]; then
+    echo "Creating input directory"
+    mkdir input
+fi
+
 REMOTE="https://github.com/cdisc-org/DDF-RA/raw/${BRANCH}/Deliverables/UML/USDM_UML.eapx"
 
 echo "Pulling USDM from ${REMOTE}"

@@ -22,3 +22,12 @@ $ scripts/expand.bash USDM_UML.eapx usdm
 $ poetry run expand usdm output
 ``` 
 
+## Pulling a version of the USDM
+
+There's a helper script to pull a version of the USDM EAP file
+
+It takes an optional argument to point at the branch; if not specified it will pull the `main` branch; for example to retrieve the current version for `sprint-9` run it as follows:
+```
+$ /bin/bash scripts/pull_usdm.bash sprint-9
+```
+
