@@ -154,7 +154,7 @@ def generate(
     sheet = doc.active
     sheet.title = "Objects"
     for idx, column in enumerate(
-        ("Class", "Attribute", "Type", "Cardinality", "Class Note", "Definition", "Codelist", "External Codelist")
+        ("Class", "Attribute", "Type", "Cardinality", "Class Note", "NCI C-code", "Definition", "Codelist", "External Codelist")
     ):
         sheet.cell(row=1, column=idx + 1).value = column
     row_num = 2
@@ -184,8 +184,8 @@ def generate(
                         _attr_ref = _ref.get_attribute(_attribute.name)
                         if _attr_ref:
                             attrib["definition"] = _attr_ref.definition
+                            attrib["c_code"] = _attr_ref.nci_c_code
                             if _attr_ref.has_value_list:
-                                print(f"Attribute {_attribute.name} has value list", _attr_ref.value_list_description)
                                 if _attr_ref.external_value_list:
                                     attrib["external_value_list"] = _attr_ref.value_list_description
                                 else:
@@ -219,9 +219,10 @@ def generate(
                     sheet.cell(row=row_num, column=5).value = (
                         obj.note if obj.note else ""
                     )
-                sheet.cell(row=row_num, column=6).value = attrib.get("definition", "")
-                sheet.cell(row=row_num, column=7).value = attrib.get("codelist", "")
-                sheet.cell(row=row_num, column=8).value = attrib.get("external_value_list", "")
+                sheet.cell(row=row_num, column=6).value = attrib.get("c_code", "")
+                sheet.cell(row=row_num, column=7).value = attrib.get("definition", "")
+                sheet.cell(row=row_num, column=8).value = attrib.get("codelist", "")
+                sheet.cell(row=row_num, column=9).value = attrib.get("external_value_list", "")
                 row_num += 1
     # create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
