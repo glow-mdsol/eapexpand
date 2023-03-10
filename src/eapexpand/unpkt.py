@@ -180,7 +180,6 @@ class Object:
     """
     Represents an object in the EAP model
     """
-
     object_id: int = field(metadata=config(field_name="Object_ID"))
     object_type: str = field(metadata=config(field_name="Object_Type"))
     diagram_id: int = field(metadata=config(field_name="Diagram_ID"))
@@ -249,7 +248,7 @@ def load_connectors(filename):
     return data
 
 
-def load(source_dir: str):
+def load_expanded_dir(source_dir: str):
     # load the key entities
     packages = load_packages(os.path.join(source_dir, "t_package.json"))
     objects = load_objects(os.path.join(source_dir, "t_object.json"))
@@ -409,4 +408,15 @@ def generate(
     # create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
-    doc.save(os.path.join(output_dir, f"{name}.xlsx"))
+    fname = os.path.join(output_dir, f"{name}.xlsx")
+    doc.save(fname)
+    print(f"Generated Excel file: {fname}")
+    
+
+def main(source_dir: str, output_dir: str):
+    """
+    Main entry point
+    """
+    name = os.path.basename(os.path.dirname(source_dir)) if source_dir.endswith("/") else os.path.basename(source_dir)
+    objects, attributes, connectors = load_expanded_dir(source_dir)
+    generate(name, objects, attributes, connectors, output_dir=output_dir)

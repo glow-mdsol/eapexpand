@@ -1,13 +1,24 @@
 import sys
 import os
-from .unpkt import load, generate
+import argparse
+
 
 def main():
-
-    source = sys.argv[1]
-    output_dir = sys.argv[2] if len(sys.argv) > 2 else "output"
-    name = os.path.basename(source)
-    objects, attributes, connectors = load(source_dir=source)
-    generate(name, objects, attributes, connectors, output_dir=output_dir)
-    print(f"Done generating {output_dir}{os.sep}{name}.xlsx")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--usdm", help="Source is USDM", action="store_true", default=False)
+    parser.add_argument("--usdm-ct", type=str, help="Path to Controlled Terms file")
+    parser.add_argument("--output", type=str, help="Output directory", default="output")
+    parser.add_argument("source", type=str, help="Source directory")
+    opts = parser.parse_args()
+    source = opts.source
+    output_dir = opts.output
+    if opts.usdm:
+        if opts.usdm_ct is None:
+            print("USDM Controlled Terms file is required")
+            sys.exit(1)
+        from .usdm_unpkt import main_usdm
+        main_usdm(opts.source, opts.usdm_ct, output_dir)
+    else:
+        from .unpkt import main
+        main(source, output_dir)
 
