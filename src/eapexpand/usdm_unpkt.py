@@ -99,8 +99,6 @@ class Entity:
         return entity
 
 
-
-
 def load_usdm_ct(filename: str):
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File not found: {filename}")
@@ -137,7 +135,6 @@ def load_usdm_ct(filename: str):
     return entities
 
 
-
 def generate(
     name: str,
     objects: dict,
@@ -154,7 +151,7 @@ def generate(
     sheet = doc.active
     sheet.title = "Objects"
     for idx, column in enumerate(
-        ("Class", "Attribute", "Type", "Cardinality", "Class Note", "NCI C-code", "Definition", "Codelist", "External Codelist")
+        ("Class", "Attribute", "Type", "Cardinality", "Class Note", "NCI C-code", "Preferred term", "Definition", "Codelist", "External Codelist")
     ):
         sheet.cell(row=1, column=idx + 1).value = column
     row_num = 2
@@ -162,7 +159,7 @@ def generate(
         _output = {}
         if obj.object_type == "Class":
             _object_id = obj.object_id
-            _ref = ct_content.get(obj.name)
+            _ref = ct_content.get(obj.name) # type: Entity                
             _attributes = sorted(
                 [
                     attributes[attr_id]
@@ -170,6 +167,21 @@ def generate(
                     if attributes[attr_id].object_id == _object_id
                 ]
             )
+            # write the entity
+            sheet.cell(row=row_num, column=1).value = obj.name
+            if _ref:
+                if _ref.definition:
+                    sheet.cell(row=row_num, column=8).value = _ref.definition
+                if _ref.nci_c_code:
+                    sheet.cell(row=row_num, column=6).value = _ref.nci_c_code
+                if _ref.preferred_term:
+                    sheet.cell(row=row_num, column=7).value = _ref.preferred_term
+            else:
+                print(f"Reference not found for {obj.name}")
+            if obj.note:
+                sheet.cell(row=row_num, column=5).value = str(obj.note)
+            row_num += 1
+
             for _attribute in _attributes:
                 attrib = _output.setdefault(_attribute.name, {})
                 if not attrib:
@@ -185,6 +197,7 @@ def generate(
                         if _attr_ref:
                             attrib["definition"] = _attr_ref.definition
                             attrib["c_code"] = _attr_ref.nci_c_code
+                            attrib["pref_term"] = _attr_ref.preferred_term
                             if _attr_ref.has_value_list:
                                 if _attr_ref.external_value_list:
                                     attrib["external_value_list"] = _attr_ref.value_list_description
@@ -215,14 +228,11 @@ def generate(
                 sheet.cell(row=row_num, column=4).value = attrib[
                     "attribute_cardinality"
                 ]
-                if offset == 0:
-                    sheet.cell(row=row_num, column=5).value = (
-                        obj.note if obj.note else ""
-                    )
                 sheet.cell(row=row_num, column=6).value = attrib.get("c_code", "")
-                sheet.cell(row=row_num, column=7).value = attrib.get("definition", "")
-                sheet.cell(row=row_num, column=8).value = attrib.get("codelist", "")
-                sheet.cell(row=row_num, column=9).value = attrib.get("external_value_list", "")
+                sheet.cell(row=row_num, column=7).value = attrib.get("pref_term", "")
+                sheet.cell(row=row_num, column=8).value = attrib.get("definition", "")
+                sheet.cell(row=row_num, column=9).value = attrib.get("codelist", "")
+                sheet.cell(row=row_num, column=10).value = attrib.get("external_value_list", "")
                 row_num += 1
     # create the output directory if it doesn't exist
     if not os.path.exists(output_dir):

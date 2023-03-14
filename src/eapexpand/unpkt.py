@@ -347,6 +347,11 @@ def generate(
                     if attributes[attr_id].object_id == _object_id
                 ]
             )
+            # write the entity
+            sheet.cell(row=row_num, column=1).value = obj.name
+            if obj.note:
+                sheet.cell(row=row_num, column=5).value = str(obj.note)
+            row_num += 1
             for _attribute in _attributes:
                 attrib = _output.setdefault(_attribute.name, {})
                 if not attrib:
@@ -400,10 +405,6 @@ def generate(
                 sheet.cell(row=row_num, column=4).value = attrib[
                     "attribute_cardinality"
                 ]
-                if offset == 0:
-                    sheet.cell(row=row_num, column=5).value = (
-                        obj.note if obj.note else ""
-                    )
                 row_num += 1
     # create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
