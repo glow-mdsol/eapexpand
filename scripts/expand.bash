@@ -1,12 +1,12 @@
 EAPX=$1
 OUTPUT=$2
 
-if [! -e $EAPX]; then
+if [ ! -e $EAPX ]; then
     echo "EAPX file not found"
     exit 1
 fi
 
-if [! -e $OUTPUT]; then
+if [ ! -e $OUTPUT ]; then
     echo "Output directory not found"
     exit 1
 fi
