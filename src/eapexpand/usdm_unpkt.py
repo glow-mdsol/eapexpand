@@ -10,9 +10,13 @@ from .unpkt import load_expanded_dir
 
 
 def _f(cell: Cell):
+    """
+    Coerce empty cells to empty strings
+    """
     if cell.value is None:
         return ""
     return str(cell.value)
+
 
 @dataclass
 class PermissibleValue:
@@ -58,6 +62,7 @@ class Entity:
     relationships: Optional[List[str]] = field(default_factory=list)
     codelist_c_code: Optional[str] = None
     codelist_items: Optional[List[PermissibleValue]] = field(default_factory=list)
+    role: Optional[str] = None
 
     def get_attribute(self, attribute_name: str):
         for attr in self.attributes:
@@ -159,7 +164,9 @@ def generate(
         _output = {}
         if obj.object_type == "Class":
             _object_id = obj.object_id
-            _ref = ct_content.get(obj.name) # type: Entity                
+            _ref = ct_content.get(obj.name) # type: Entity
+            if _ref is None:
+                print("WARNING: Reference not found for " + obj.name)             
             _attributes = sorted(
                 [
                     attributes[attr_id]
