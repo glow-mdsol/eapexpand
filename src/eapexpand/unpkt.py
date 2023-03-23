@@ -24,7 +24,10 @@ def load_expanded_dir(source_dir: str):
         if attrib.classifier_id in objects:
             attrib.attribute_classifier = objects.get(attrib.classifier_id)
     connectors = load_connectors(os.path.join(source_dir, "t_connector.json"))
-
+    _connectors = {x.dest_role: x for x in connectors.values()}
+    for _id, _attr in attributes.items():
+        if _attr.name in _connectors:
+            _attr.connector = _connectors.get(_attr.name)
     # Coalesce the attributes into the objects
     for object_id, _object in objects.items():
         _object.attributes = [
@@ -33,11 +36,7 @@ def load_expanded_dir(source_dir: str):
             if attributes[attr_id].object_id == object_id
         ]
         _object.attributes.sort()
-
     # link the connectors to the objects
-    for connector in connectors.values():
-        objects[connector.start_object_id].outgoing_connections.append(connector)
-        objects[connector.end_object_id].incoming_connections.append(connector)
     return objects, attributes, connectors
 
 
@@ -82,9 +81,7 @@ def generate(
                     attrib = dict(
                         attribute_name=_attribute.name,
                         attribute_type=_attribute.attribute_type,
-                        attribute_cardinality=_attribute.lower_bound
-                        + ".."
-                        + _attribute.upper_bound,
+                        attribute_cardinality=_attribute.cardinality
                     )
                 # TODO - upsert
                 _output[_attribute.name] = attrib
@@ -102,18 +99,18 @@ def generate(
                 for cid in connectors
                 if connectors[cid].start_object_id == _object_id
             ]
-            for connection in connections:
-                if connection.connector_type not in ("Association", "Generalization"):
-                    continue
-                attrib = _output.setdefault(connection.name, {})
-                if not attrib:
-                    attrib = dict(
-                        attribute_name=connection.name,
-                        attribute_type=objects[connection.end_object_id].name,
-                        attribute_cardinality=connection.source_card,
-                        note=None,
-                    )
-                _output[connection.name] = attrib
+            # for connection in connections:
+            #     if connection.connector_type not in ("Association", "Generalization"):
+            #         continue
+            #     attrib = _output.setdefault(connection.name, {})
+            #     if not attrib:
+            #         attrib = dict(
+            #             attribute_name=connection.name,
+            #             attribute_type=objects[connection.end_object_id].name,
+            #             attribute_cardinality=connection.source_card,
+            #             note=None,
+            #         )
+            #     _output[connection.name] = attrib
                 # _attributes = sorted([attributes[aid] for aid in attributes if attributes[aid].object_id == _connector.end_object_id])
                 # for _attribute in _attributes:
                 #     attrib = _output.setdefault(_attribute.name, {})
