@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
 from dataclasses_json import dataclass_json, LetterCase, config
 
 
@@ -200,7 +200,14 @@ class Attribute:
         metadata=config(field_name="Stereotype"), default=""
     )
     attribute_classifier: Optional[Object] = None
+    connector: Optional[Connector] = None
 
+    @property
+    def cardinality(self):
+        if self.connector:
+            return self.connector.dest_card if self.connector.dest_card else "1..1"
+        return "1..1"
+    
     def __lt__(self, other):
         return self.pos < other.pos
 
@@ -249,7 +256,7 @@ class Object:
         return self.name + " " + str(self.object_id)
 
 
-def load_packages(filename):
+def load_packages(filename) -> Dict[int, Package]:
     data = {}
     with open(filename, "r") as f:
         for line in f:
@@ -293,3 +300,5 @@ def load_connectors(filename) -> Dict[int, Connector]:
             _connector = Connector.from_json(line)
             data[_connector.connector_id] = _connector
     return data
+
+    
