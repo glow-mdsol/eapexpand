@@ -7,41 +7,12 @@ from openpyxl import Workbook
 from datetime import datetime
 from typing import Dict, Optional, List
 
-from .ea_model import load_attributes, load_connectors, load_objects, load_packages
-
-
-def load_expanded_dir(source_dir: str):
-    # load the key entities
-    packages = load_packages(os.path.join(source_dir, "t_package.json"))
-    objects = load_objects(os.path.join(source_dir, "t_object.json"))
-    for _object in objects.values():
-        if _object.package_id in packages:
-            _object.package = packages.get(_object.package_id)
-            packages.get(_object.package_id).objects.append(_object)
-    attributes = load_attributes(os.path.join(source_dir, "t_attribute.json"))
-    # add the classifier
-    for attrib in attributes.values():
-        if attrib.classifier_id in objects:
-            attrib.attribute_classifier = objects.get(attrib.classifier_id)
-    connectors = load_connectors(os.path.join(source_dir, "t_connector.json"))
-    _connectors = {x.dest_role: x for x in connectors.values()}
-    for _id, _attr in attributes.items():
-        if _attr.name in _connectors:
-            _attr.connector = _connectors.get(_attr.name)
-    # Coalesce the attributes into the objects
-    for object_id, _object in objects.items():
-        _object.attributes = [
-            attributes[attr_id]
-            for attr_id in attributes
-            if attributes[attr_id].object_id == object_id
-        ]
-        _object.attributes.sort()
-    # link the connectors to the objects
-    return objects, attributes, connectors
+from eapexpand.loader import load_expanded_dir
 
 
 def generate(
     name: str,
+    packages: dict,
     objects: dict,
     attributes: dict,
     connectors: dict,
@@ -51,7 +22,17 @@ def generate(
     Generates the Excel Representation of the model
     :param name: The name of the model - guides what the output file is called
     """
+    # subset by packages
+    _partitions = {}
+    for _object in objects.values():
+        if _object.package_id in packages:
+            _package = packages.get(_object.package_id)
+            _partitions.setdefault(_package.name, []).append(_object)
+
     doc = Workbook()
+    
+    for _partition_id, objects in _partitions.items():
+        _package = packages.get(_partition_id)
     sheet = doc.active
     sheet.title = "Objects"
     for idx, column in enumerate(
