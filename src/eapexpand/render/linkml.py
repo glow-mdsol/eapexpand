@@ -1,30 +1,23 @@
 from typing import Optional
 
+import yaml
+
 from ..models.eap import Object, Attribute, Connector, Package
 
-def generate(self, name: str,
-             packages: dict, 
+def generate(self, 
+             name: str,
              objects: dict, 
-             attributes: dict, 
-             connectors: dict, 
              output_dir: Optional[str] = "output"):
     """
     Create a LinkML representation from the EAP model
     """
-    model = {}
+    model = {"id": name, "name": name, "classes": [], "slots": []}
     slots = {}
     for obj in objects.values():  # type: Object
         if obj.object_type == "Class":
             _class = {"slots": []}
             _object_id = obj.object_id
-            _attributes = sorted(
-                [
-                    attributes[attr_id]
-                    for attr_id in attributes
-                    if attributes[attr_id].object_id == _object_id
-                ]
-            )
-
+            _attributes = sorted(obj.attributes)
             _attributes.sort()
             for attr in _attributes:  # type: Attribute
                 if attr not in slots:
@@ -48,10 +41,6 @@ def generate(self, name: str,
                     for attr in _attributes
                 ],
             }
-        _attributes = sorted(
-                    [
-                        attributes[attr_id]
-                        for attr_id in attributes
-                        if attributes[attr_id].object_id == _object_id
-                    ]
-                )
+    with open(f"{output_dir}/{name}.yaml", "w") as fh:
+        fh.write(yaml.dump(model, sort_keys=False))
+        
