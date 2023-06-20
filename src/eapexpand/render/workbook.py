@@ -38,19 +38,23 @@ def generate(
         worksheet.cell(row, column).alignment = Alignment(wrap_text=True, vertical='top')
         if header:
             worksheet.cell(row, column).font = Font(bold=True)
+    # write the packages
     wkst = doc.active
     wkst.title = "Packages"
     write_cell(wkst, 1, 1, "Package", True)
-    write_cell(wkst, 1, 2, "Note", True)
-    write_cell(wkst, 1, 3, "Parent", True)
+    write_cell(wkst, 1, 3, "Note", True)
+    write_cell(wkst, 1, 2, "Parent", True)
     row_num = 2
     for _package in packages.values():
         write_cell(wkst, row_num, 1, _package.name)
-        write_cell(wkst, row_num, 2, _package.note)
+        write_cell(wkst, row_num, 3, _package.note)
         if _package.parent:
-            write_cell(wkst, row_num, 3, _package.parent.name)
+            write_cell(wkst, row_num, 2, _package.parent.name)
         row_num += 1
     for _package_name, objects in _partitions.items():
+        # Skip packages with only one object
+        if len(objects) == 1:
+            continue
         _sheet_name = _package_name[:30]
         # Limit on the Sheet Name length
         sheet = doc.create_sheet(_sheet_name)
