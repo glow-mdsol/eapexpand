@@ -8,16 +8,20 @@ packages = [
     {include = "eapexpand", from = "src"},
 ]
 
-
 [tool.poetry.dependencies]
 python = "^3.10"
 openpyxl = "^3.0.10"
 dataclasses-json = "^0.5.7"
 mdb-parser = "^0.0.3"
-rdflib = "^6.3.2"
 
 [tool.poetry.scripts]
 expand="eapexpand.cli:main"
+
+[tool.poetry.group.linkml.dependencies]
+linkml = "^1.5.5"
+
+[tool.poetry.group.shapes.dependencies]
+rdflib = "^6.3.2"
 
 [build-system]
 requires = ["poetry-core"]
