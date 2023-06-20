@@ -1,3 +1,4 @@
+# Expand a EAP file into a directory of JSON files.
 EAPX=$1
 OUTPUT=$2
 

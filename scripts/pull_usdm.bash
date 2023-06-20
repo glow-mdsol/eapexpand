@@ -1,3 +1,4 @@
+# Pull a specified branch for the USDM from the CDISC DDF-RA repository
 BRANCH=${1:-main}
 INPUTDIR=${2:-input}
 
