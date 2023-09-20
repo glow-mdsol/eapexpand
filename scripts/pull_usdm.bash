@@ -2,7 +2,7 @@
 BRANCH=${1:-main}
 INPUTDIR=${2:-input}
 
-if [! -d $INPUTDIR ]; then
+if [ ! -d $INPUTDIR ]; then
     echo "Creating input directory"
     mkdir $INPUTDIR
 fi
