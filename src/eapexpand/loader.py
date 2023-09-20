@@ -11,6 +11,6 @@ def load_expanded_dir(source_dir: str):
     :param source_dir: Target source directory
     """
     # load the key entities
-    objects = load_objects(source_dir)
-    logger.info(f"Loaded {len(objects)} objects")
-    return objects
+    document = load_objects(source_dir)
+    logger.info(f"Loaded {len(document.objects)} objects")
+    return document

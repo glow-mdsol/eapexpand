@@ -3,6 +3,8 @@ from typing import Dict, List
 from .eap import (
     Artifact,
     Boundary,
+    DataType,
+    Document,
     Note,
     Object,
     Attribute,
@@ -16,7 +18,7 @@ from .eap import (
     Text,
 )
 import json
-
+import os
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -39,12 +41,11 @@ def load_packages(path: str) -> Dict[int, Package]:
     for _package in data.values():
         if _package.parent_id in _by_id:
             _parent = _by_id.get(_package.parent_id)
-            _data_package = data.get(_package.ea_guid)
-            _data_package.parent = _parent
+            _package.parent = _parent
     return data
 
 
-def load_objects(path: str) -> Dict[int, Object]:
+def load_objects(path: str) -> Document:
     """
     Loads the objects from the EAP file
     - note, includes Packages, Classes, Enumerations, etc
@@ -53,11 +54,14 @@ def load_objects(path: str) -> Dict[int, Object]:
     assert Path(path).exists(), f"Input Path does not exist: {path}"
     assert (Path(path) / "t_object.json").exists(), f"Path is not a file: {path}"
     # pull the package metadata
-    _package_metadata = {}
-    with open((Path(path) / "t_package.json"), "r") as f:
+    _package_metadata = load_packages(path)
+   
+    data_types = {}
+    with open((Path(path) / "t_datatypes.json"), "r") as f:
         for line in f:
-            _line = json.loads(line)
-            _package_metadata[_line["ea_guid"]] = _line
+            if line:
+                _datatype = DataType.from_json(line)
+                data_types[_datatype.id] = _datatype
 
     _packages = {}
     with open((Path(path) / "t_object.json"), "r") as f:
@@ -104,6 +108,9 @@ def load_objects(path: str) -> Dict[int, Object]:
             for line in f:
                 _attribute = Attribute.from_json(line)
                 data[_attribute.object_id].attributes.append(_attribute)
+                if _attribute.classifier_id:
+                    data[_attribute.classifier_id].classifies.append(_attribute)
+
     if (Path(path) / "t_connector.json").exists():
         with open((Path(path) / "t_connector.json"), "r") as f:
             for line in f:
@@ -121,14 +128,17 @@ def load_objects(path: str) -> Dict[int, Object]:
     # fix packages
     _packages = {x.package_id: x for x in data.values() if x.object_type == "Package"}
     for pkg_id, _package in _packages.items():
-        
         # bind the objects
         _objects = [x for x in data.values() if x.package_id == pkg_id]
         print("Package %s (%s) has %s objects" % (_package.name, _package.package_id, len(_objects)))
         _package.objects = _objects
         # bind the parent
         _package.parent = _packages.get(_package.parent_id)
-    return data
+    document = Document(name=os.path.basename(path),
+                        data_types=data_types, 
+                        packages=_packages, 
+                        objects=data.values())
+    return document
 
 
 # def load_attributes(path: str) -> Dict[int, Attribute]:

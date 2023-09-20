@@ -66,7 +66,7 @@ def main_usdm(source_dir: str, controlled_term: str, output_dir: str, gen: Dict[
                 generate_prisma(name, objects, ct_content, codelists, output_dir)
             elif aspect == "linkml":
                 from .render.linkml import generate as generate_linkml
-                generate_linkml(name, objects, ct_content, codelists, output_dir)
+                generate_linkml(name, objects=objects,  output_dir=output_dir)
             elif aspect == "shapes":
                 from .render.shapes import generate as generate_shapes
                 generate_shapes(name, objects, ct_content, codelists, output_dir)

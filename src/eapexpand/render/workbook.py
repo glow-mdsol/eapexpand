@@ -5,10 +5,12 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
 
+from eapexpand.models.eap import Document
+
 
 def generate(
     name: str,
-    objects: dict,
+    document: Document,
     output_dir: Optional[str] = "output",
 ):
     """
@@ -16,10 +18,10 @@ def generate(
     :param name: The name of the model - guides what the output file is called
     """
     HEADERS =  ("Package", "Class", "Attribute", "Type", "Cardinality", "Class Note")
-    packages = {x.package_id: x for x in objects.values() if x.object_type == "Package"}
+    packages = {x.package_id: x for x in document.objects if x.object_type == "Package"}
     # subset by packages
     _partitions = {}
-    for _object in objects.values():
+    for _object in document.objects:
         if _object.package_id in packages:
             _package = packages.get(_object.package_id)
             _partitions.setdefault(_package.name, []).append(_object)

@@ -7,7 +7,7 @@ Generates one or more shapes for the Object
 """
 
 
-def generate(self, name: str,
+def generate(name: str,
              packages: dict, 
              objects: dict, 
              attributes: dict, 

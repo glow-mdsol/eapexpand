@@ -41,6 +41,86 @@ def decode_flag(flag: int) -> bool:
     """
     return flag == 1
 
+class Document:
+    def __init__(self, name: str, 
+                 data_types: List[DataType],
+                 packages: List[Package],
+                 objects: List[Object]) -> None:
+        self.name = name
+        self._data_types = data_types
+        self._types = []
+        self._slots = []
+        self._enums = []
+        self._packages = packages
+        self._objects = objects
+        # self._attributes = attributes
+        # self._connectors = connectors
+    
+    @property
+    def packages(self) -> List[Object]:
+        return [x for x in self._objects if isinstance(x, Package)]
+
+    @property
+    def objects(self) -> List[Object]:
+        return self._objects
+    
+    @property
+    def attributes(self) -> List[Attribute]:
+        return [x for x in self._objects if isinstance(x, Attribute)]
+    
+    @property
+    def connectors(self) -> List[Connector]:
+        return [x for x in self._objects if isinstance(x, Connector)]
+    
+    @property
+    def classes(self) -> List[Object]:
+        return [x for x in self._objects if isinstance(x, Class)]
+
+    @property
+    def states(self) -> List[Object]:
+        return [x for x in self._objects if isinstance(x, State)]
+
+    @property
+    def state_nodes(self) -> List[Object]:
+        return [x for x in  self._types if isinstance(x, State)]
+    
+    @property
+    def used_types(self) -> List[str]:
+        if not self._types:
+            _types = []
+            for obj in self._objects:  # type: Object
+                if obj.attribute_type and obj.attribute_type not in _types:
+                    _types.append(obj.attribute_type)
+            self._types = _types
+        return self._types
+
+    # @classmethod
+    # def from_dict(cls, datatypes: List[DataType], data: Dict[str, Any]) -> Document:
+    #     """
+    #     Create a document from a dictionary
+    #     """
+    #     _objects = [Object.from_dict(x) for x in data.get("objects", [])]
+    #     _attributes = [Attribute.from_dict(x) for x in data.get("attributes", [])]
+    #     _connectors = [Connector.from_dict(x) for x in data.get("connectors", [])]
+    #     return cls(data.get("name"), datatypes, _objects, _attributes, _connectors)
+    
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class DataType:
+    id: int = field(metadata=config(field_name="DatatypeID"))
+    datatype_type: str = field(metadata=config(field_name="Type"))
+    size: Optional[int] = field(metadata=config(field_name="Size"), default=None)
+    max_prec: Optional[int] = field(metadata=config(field_name="MaxPrec"), default=None)
+    max_scale: Optional[int]  = field(metadata=config(field_name="MaxScale"), default=None)
+    default_len: Optional[int] = field(metadata=config(field_name="DefaultLen"), default=None)
+    default_prec: Optional[int] = field(metadata=config(field_name="DefaultPrec"), default=None)
+    default_scale: Optional[int] = field(metadata=config(field_name="DefaultScale"), default=None)
+    user: Optional[int] = field(metadata=config(field_name="User"), default=None)
+    generic_type: Optional[str] = field(metadata=config(field_name="GenericType"), default="")
+    product_name: Optional[str] = field(metadata=config(field_name="Product_Name"), default="")
+    datatype: Optional[str] = field(metadata=config(field_name="Datatype"), default="")
+    max_len: Optional[int] = field(metadata=config(field_name="MaxLen"), default=None)
+
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
@@ -158,7 +238,7 @@ class Attribute:
     ea_guid: Optional[str] = field(metadata=config(field_name="ea_guid"), default=None)
     attribute_classifier: Optional[Object] = None
     connector: Optional[Connector] = None
-    notes: Optional[str] = field(metadata=config(field_name="Notes"), default="")
+    note: Optional[str] = field(metadata=config(field_name="Note"), default="")
 
     def __lt__(self, other):
         return self.pos < other.pos
@@ -217,7 +297,11 @@ class Object:
     attributes: Optional[List[Attribute]] = field(default_factory=list)
     properties: Optional[List[ObjectProperty]] = field(default_factory=list)
     connectors: Optional[List[Connector]] = field(default_factory=list)
+    classifies: Optional[List[Object]] = field(default_factory=list)
 
+    def __lt__(self, other):
+        return self.object_id < other.object_id
+    
     def __str__(self):
         return self.name + " " + str(self.object_id)
 
