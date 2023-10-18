@@ -115,7 +115,8 @@ def load_objects(path: str) -> Document:
         with open((Path(path) / "t_connector.json"), "r") as f:
             for line in f:
                 _connector = Connector.from_json(line)
-                data[_connector.start_object_id].connectors.append(_connector)
+                data[_connector.start_object_id].outgoing_connections.append(_connector)
+                data[_connector.end_object_id].incoming_connections.append(_connector)
                 if _connector.connector_type == "Generalization":
                     if _connector.start_object_id in data:
                         data[_connector.start_object_id].generalizations.append(
