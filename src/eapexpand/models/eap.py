@@ -10,14 +10,21 @@ from dataclasses_json import dataclass_json, LetterCase, config
 Wrapper dataclasses for the Objects in the EA file
 """
 
-
-DATE_FORMAT = "%m/%d/%y %H:%M:%S"
+DATE_FORMAT = None
 
 
 def decode_date(date_str: Optional[str]) -> datetime:
     """
     Decodes a date string into a datetime object
     """
+    if isinstance(date_str, datetime):
+        return date_str
+    global DATE_FORMAT
+    if DATE_FORMAT is None:
+        if '/' in date_str:
+            DATE_FORMAT = "%m/%d/%y %H:%M:%S"
+        else:
+            DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     return datetime.strptime(date_str, DATE_FORMAT) if date_str else None
 
 
@@ -43,11 +50,9 @@ def decode_flag(flag: int) -> bool:
 
 class Document:
     def __init__(self, name: str, 
-                 data_types: List[DataType],
                  packages: List[Package],
                  objects: List[Object]) -> None:
         self.name = name
-        self._data_types = data_types
         self._types = []
         self._slots = []
         self._enums = []
@@ -64,6 +69,12 @@ class Document:
     def objects(self) -> List[Object]:
         return self._objects
     
+    def get_object(self, object_id: int) -> Optional[Object]:
+        for obj in self._objects:
+            if obj.object_id == object_id:
+                return obj
+        return None
+
     @property
     def attributes(self) -> List[Attribute]:
         return [x for x in self._objects if isinstance(x, Attribute)]
@@ -128,7 +139,6 @@ class Connector:
     """
     Represents a connector in the EAP model
     """
-
     connector_id: int = field(metadata=config(field_name="Connector_ID"))
     connector_type: str = field(metadata=config(field_name="Connector_Type"))
     start_object_id: int = field(metadata=config(field_name="Start_Object_ID"))
@@ -141,8 +151,8 @@ class Connector:
     route_style: int
     is_bold: int
     line_color: int
-    virtual_inheritance: str
     diagram_id: int = field(metadata=config(field_name="DiagramID"))
+    virtual_inheritance: Optional[str] = field(metadata=config(field_name="VirtualInheritance"), default="")
     ea_guid: Optional[str] = field(metadata=config(field_name="ea_guid"), default=None)
     is_root: Optional[bool] = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
     is_leaf: Optional[bool] = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
@@ -178,7 +188,12 @@ class Connector:
     dest_style: Optional[str] = ""
     source_is_navigable: Optional[int] = -1
     dest_is_navigable: Optional[int] = -1
-
+    package_data_1: Optional[str] = field(metadata=config(field_name="PDATA1"), default="")
+    package_data_2: Optional[str] = field(metadata=config(field_name="PDATA2"), default="")
+    package_data_3: Optional[str] = field(metadata=config(field_name="PDATA3"), default="")
+    package_data_4: Optional[str] = field(metadata=config(field_name="PDATA4"), default="")
+    package_data_5: Optional[str] = field(metadata=config(field_name="PDATA5"), default="")
+   
     @property
     def id(self):
         return self.connector_id
@@ -296,8 +311,8 @@ class Object:
     specializations: Optional[List[Object]] = field(default_factory=list)
     attributes: Optional[List[Attribute]] = field(default_factory=list)
     properties: Optional[List[ObjectProperty]] = field(default_factory=list)
-    connectors: Optional[List[Connector]] = field(default_factory=list)
     classifies: Optional[List[Object]] = field(default_factory=list)
+    edges: Optional[List[Connector]] = field(default_factory=list)
 
     def __lt__(self, other):
         return self.object_id < other.object_id
@@ -379,26 +394,27 @@ class Package(Object):
     )
     package_flags: Optional[str] = field(default_factory=list)
     objects: List[Object] = field(default_factory=list)
-    parent_package: Optional[Package] = field(default=None, init=False)
+    parent: Optional[Package] = field(default=None, init=False)
+    diagram_id: Optional[int] = field(metadata=config(field_name="Diagram_ID"), default=None)
 
-    def merge(self, data: Dict[str, Any]):
+    def merge(self, data: Package):
         """
         Merge the data into the package
         """
-        self.package_id = data.get("Package_ID")
-        self.package_name = data.get("Name")
-        self.parent_id = data.get("Parent_ID")
-        self.created_date = decode_date(data.get("CreatedDate"))
-        self.modified_date = decode_date(data.get("ModifiedDate"))
-        self.is_controlled = decode_flag(data.get("IsControlled"))
-        self.last_load_date = decode_date(data.get("LastLoadDate"))
-        self.last_save_date = decode_date(data.get("LastSaveDate"))
-        self.protected = decode_flag(data.get("Protected"))
-        self.use_dtd = decode_flag(data.get("UseDTD"))
-        self.log_xml = decode_flag(data.get("LogXML"))
-        self.batch_save = decode_flag(data.get("BatchSave"))
-        self.batch_load = decode_flag(data.get("BatchLoad"))
-        self.package_flags = data.get("PackageFlags", "").split(";") if data.get("PackageFlags") else []
+        self.package_id = data.package_id
+        self.package_name = data.name
+        self.parent_id = data.parent_id
+        self.created_date = decode_date(data.created_date)
+        self.modified_date = decode_date(data.modified_date)
+        self.is_controlled = decode_flag(data.is_controlled)
+        self.last_load_date = decode_date(data.last_load_date)
+        self.last_save_date = decode_date(data.last_save_date)
+        self.protected = decode_flag(data.protected)
+        self.use_dtd = decode_flag(data.use_dtd)
+        self.log_xml = decode_flag(data.log_xml)
+        self.batch_save = decode_flag(data.batch_save)
+        self.batch_load = decode_flag(data.batch_load)
+        self.package_flags = data.package_flags.split(";") if data.package_flags else []
 
     @property
     def id(self):
