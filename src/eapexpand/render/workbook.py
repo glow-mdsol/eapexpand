@@ -92,8 +92,8 @@ def generate(
                         attrib = dict(attribute_name=outgoing_connection.name,
                                         attribute_type=objects[outgoing_connection.end_object_id].name,
                                         attribute_cardinality=outgoing_connection.dest_card,
-                                        attribute_note=None)
-                        _output[_attribute.name] = attrib
+                                        attribute_note=None)         
+                        _output[outgoing_connection.name] = attrib
 
                 for _, attrib in enumerate(_output.values()):
                     write_cell(sheet, row=row_num, column=1, value = _package_name)
