@@ -87,6 +87,14 @@ def generate(
                         )
                     # TODO - upsert
                     _output[_attribute.name] = attrib
+                for outgoing_connection in obj.outgoing_connections:
+                    if outgoing_connection.connection_type == "Association":
+                        attrib = dict(attribute_name=outgoing_connection.name,
+                                        attribute_type=objects[outgoing_connection.end_object_id].name,
+                                        attribute_cardinality=outgoing_connection.dest_card,
+                                        attribute_note=None)
+                        _output[_attribute.name] = attrib
+
                 for _, attrib in enumerate(_output.values()):
                     write_cell(sheet, row=row_num, column=1, value = _package_name)
                     write_cell(sheet, row=row_num, column=2, value = obj.name)
