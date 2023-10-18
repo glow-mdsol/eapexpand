@@ -1,6 +1,6 @@
 import os
 from typing import Dict, Optional
-from eapexpand.models.eap import Attribute, Connector, Object
+from eapexpand.models.eap import Attribute, Connector, Document, Object
 
 from openpyxl import load_workbook, Workbook
 from openpyxl.cell.cell import Cell
@@ -23,7 +23,7 @@ HEADERS = [
 
 def generate(
     name: str,
-    objects: Dict[str, Object],
+    document: Document,
     ct_content: dict,
     codelists: dict,
     output_dir: Optional[str] = "output",
@@ -32,11 +32,11 @@ def generate(
     Generates the Excel Representation of the model
     :param name: The name of the model - guides what the output file is called
     """
-    packages = {x.package_id: x for x in objects.values() if x.object_type == "Package"}
+    packages = {x.package_id: x for x in document.objects if x.object_type == "Package"}
     # remap the code attribute model to the code list model
     # subset by packages
     _partitions = {}
-    for _object in objects.values():
+    for _object in document.objects:
         if _object.package_id in packages:
             _package = packages.get(_object.package_id)
             _partitions.setdefault(_package.name, []).append(_object)
@@ -69,8 +69,8 @@ def generate(
         if _package.parent:
             write_cell(wkst, row_num, 2, _package.parent.name)
         row_num += 1
-    for _package_name, objects in _partitions.items():
-        if len(objects) == 1:
+    for _package_name, pobjects in _partitions.items():
+        if len(pobjects) == 1:
             continue
         _sheet_name = _package_name[:30]
         # Limit on the Sheet Name length
@@ -80,12 +80,14 @@ def generate(
             write_cell(sheet, 1, idx + 1, column, header=True)
         row_num = 2
 
-        for obj in objects:
+        for obj in pobjects:  # type: Object
             _output = {}
             if obj.object_type == "Class":
                 _ref = ct_content.get(obj.name)  # type: Entity
                 if obj.generalizations:
-                    _generalization = obj.generalizations[0]
+                    _generalization = document.get_object(
+                        obj.generalizations[0].end_object_id
+                    )
                     _ref = ct_content.get(_generalization.name)
                 else:
                     _generalization = None
@@ -115,7 +117,7 @@ def generate(
                     write_cell(sheet, row=row_num, column=5, value=str(obj.note))
                 row_num += 1
 
-                for _attribute in obj.attributes:
+                for _attribute in obj.attributes:  # type: Attribute
                     attrib = _output.setdefault(_attribute.name, {})
                     if not attrib:
                         if _generalization and _attribute in _generalization.attributes:
@@ -126,7 +128,7 @@ def generate(
                             attribute_name=_name,
                             attribute_type=_attribute.attribute_type,
                             attribute_cardinality=_attribute.cardinality,
-                            attribute_note=_attribute.notes,
+                            attribute_note=_attribute.note,
                         )
                         if _ref:
                             _attr_ref = _ref.get_attribute(_attribute.name)
@@ -144,6 +146,35 @@ def generate(
                                             _attr_ref.value_list_description or ""
                                         )
                     _output[_attribute.name] = attrib
+                for outgoing_connection in obj.outgoing_connections:  # type: Connector
+                    print(
+                        "Adding connection ", outgoing_connection.name, " to ", obj.name
+                    )
+                    attrib = dict(
+                        attribute_name=outgoing_connection.name,
+                        attribute_type=document.get_object(
+                            outgoing_connection.end_object_id
+                        ).name,
+                        attribute_cardinality=outgoing_connection.dest_card,
+                        attribute_note=None,
+                    )
+                    if _ref:
+                        _attr_ref = _ref.get_attribute(outgoing_connection.name)
+
+                        if _attr_ref:
+                            attrib["definition"] = _attr_ref.definition
+                            attrib["c_code"] = _attr_ref.nci_c_code
+                            attrib["pref_term"] = _attr_ref.preferred_term
+                            if _attr_ref.has_value_list:
+                                if _attr_ref.external_value_list:
+                                    attrib[
+                                        "external_value_list"
+                                    ] = _attr_ref.value_list_description
+                                else:
+                                    attrib["codelist"] = (
+                                        _attr_ref.value_list_description or ""
+                                    )
+                    _output[attrib.get("attribute_name")] = attrib
                 # connections = [
                 #     connectors[cid]
                 #     for cid in connectors
@@ -161,7 +192,7 @@ def generate(
                 #             note=None,
                 #         )
                 #     _output[connection.name] = attrib
-                for offset, attrib in enumerate(_output.values()):
+                for _, attrib in enumerate(_output.values()):
                     _codelist = attrib.get("codelist")
                     if _codelist:
                         _cl = ct_content.get(_codelist)
@@ -236,6 +267,7 @@ def generate(
     # create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
-    fname = os.path.join(output_dir, f"{name}.xlsx")
+    _name, _ = os.path.splitext(name)
+    fname = os.path.join(output_dir, f"{_name}.xlsx")
     doc.save(fname)
     print(f"Generated USDM Excel file: {fname}")
