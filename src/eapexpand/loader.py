@@ -1,5 +1,5 @@
 from .models.loader import Enumeration, load_objects
-import os
+
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
