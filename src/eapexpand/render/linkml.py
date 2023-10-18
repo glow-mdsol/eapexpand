@@ -49,6 +49,7 @@ def generate(
                 if attr.name in ID_FIELDS:
                     _slot["identifier"] = True
                 if attr.attribute_type:
+                    # Multi-valued attributes are represented as lists
                     if 'List' in attr.attribute_type:
                         _slot["multivalued"] = True
                         _slot["range"] = attr.attribute_type.split('<')[1].split('>')[0]
@@ -56,8 +57,8 @@ def generate(
                         _slot["range"] = attr.attribute_type
                     _slot['refs'].append(obj.name)
                     _types.setdefault(attr.attribute_type, []).append(obj)
-                if attr.cardinality:
-                    print("Cardinality:", attr.cardinality)
+                # if attr.cardinality:
+                #     print("Cardinality:", attr.cardinality)
 
     # create a back reference for the types to the classes
     for obj in document.objects:  # type: Object
