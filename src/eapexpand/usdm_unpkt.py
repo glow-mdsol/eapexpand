@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
+import re
 
 
 from typing import Dict, Optional
@@ -28,8 +29,12 @@ def load_usdm_ct(filename: str):
                 entities[_name] = Entity.from_row(row)
         elif _role == "Relationship":
             entities[_name].relationships.append(row[3])
-        elif _role == "Attribute":
+        elif _role in ("Attribute", "Attribute (inherited from SyntaxTemplate)") :
             _entity = Entity.from_row(row)
+            if 'inherited from' in _role:
+                pattern = re.compile(r'\(inherited from (.*)\)')
+                _inherited_from = pattern.search(_role).group(0)
+                _entity.inherited_from = _inherited_from
             entities[_name].attributes.append(_entity)
         else:
             raise ValueError(f"Unknown entity type: {row[2]}")
