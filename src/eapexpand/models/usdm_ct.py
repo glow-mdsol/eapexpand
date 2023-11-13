@@ -49,6 +49,7 @@ class Entity:
     codelist_c_code: Optional[str] = None
     codelist_items: Optional[List[PermissibleValue]] = field(default_factory=list)
     role: Optional[str] = None
+    inherited_from: Optional[str] = None
 
     @property
     def qualified_name(self):
