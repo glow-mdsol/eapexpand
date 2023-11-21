@@ -27,14 +27,18 @@ def load_usdm_ct(filename: str):
         if _role == "Entity":
             if not _name in entities:
                 entities[_name] = Entity.from_row(row)
-        elif _role == "Relationship":
+        elif _role == "Relationship" or _role.startswith("Relationship ("):
             entities[_name].relationships.append(row[3])
-        elif _role in ("Attribute", "Attribute (inherited from SyntaxTemplate)") :
+            
+        elif _role in ("Attribute")  or _role.startswith("Attribute ("):
             _entity = Entity.from_row(row)
             if 'inherited from' in _role:
-                pattern = re.compile(r'\(inherited from (.*)\)')
-                _inherited_from = pattern.search(_role).group(0)
-                _entity.inherited_from = _inherited_from
+                pattern = re.compile(r'\(inherited from (.*)[\)]?$')
+                if pattern.search(_role):
+                    _inherited_from = pattern.search(_role).group(0)
+                    _entity.inherited_from = _inherited_from
+                else:
+                    print(f"Can't match {_role} for {_name}")
             entities[_name].attributes.append(_entity)
         else:
             raise ValueError(f"Unknown entity type: {row[2]}")
