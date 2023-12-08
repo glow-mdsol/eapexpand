@@ -4,7 +4,15 @@ import yaml
 
 from ..models.eap import Object, Attribute, Connector, Package, Document
 
-ID_FIELDS = ["id", "uuid"]
+IDENTIFIER_TYPES = ["id", "uuid"]
+
+TYPE_MAPPING = {
+    "String": "string",
+    "Integer": "integer",
+    "Boolean": "boolean",
+    "Float": "float",
+}
+
 
 def generate(
     name: str,
@@ -15,23 +23,20 @@ def generate(
     """
     Create a LinkML representation from the EAP model
     """
+
     if not prefix:
-        prefix = f"https:/example.org/{name}"
+        prefix = f"https://example.org/{name}"
     model = {
         "id": name,
         "name": name,
-        "prefixes": [
-            {
-                "linkml": dict(
-                    prefix_reference="https://w3id.org/linkml/", 
-                    prefix_prefix="linkml"
-                ),
-                name: dict(prefix_reference=prefix, prefix_prefix=name),
-            }
-        ],
+        "prefixes": {
+            "linkml": dict(prefix_reference="https://w3id.org/linkml/"),
+            name: dict(prefix_reference=prefix),
+        },
         "imports": ["linkml:types"],
         "default_range": "string",
         "default_prefix": name,
+        "default_curi_maps": ["semweb_context"],
         "classes": {},
         "slots": {},
         "types": {},
@@ -45,18 +50,23 @@ def generate(
         if obj.object_type == "Class":
             _attributes = sorted(obj.attributes)
             for attr in _attributes:  # type: Attribute
-                _slot = _slots.setdefault(attr.name, {"refs":[]})
-                if attr.name in ID_FIELDS:
+                # _slot = _slots.setdefault(attr.name, {"refs": []})
+                _slot = _slots.setdefault(attr.name, {})
+                if attr.name in IDENTIFIER_TYPES:
                     _slot["identifier"] = True
                 if attr.attribute_type:
                     # Multi-valued attributes are represented as lists
-                    if 'List' in attr.attribute_type:
+                    if "List" in attr.attribute_type:
                         _slot["multivalued"] = True
-                        _slot["range"] = attr.attribute_type.split('<')[1].split('>')[0]
+                        _slot["range"] = attr.attribute_type.split("<")[1].split(">")[0]
                     else:
-                        _slot["range"] = attr.attribute_type
-                    _slot['refs'].append(obj.name)
+                        _slot["range"] = TYPE_MAPPING.get(
+                            attr.attribute_type, attr.attribute_type
+                        )
+                    # _slot["refs"].append(obj.name)
                     _types.setdefault(attr.attribute_type, []).append(obj)
+                if attr.description:
+                    _slot["description"] = attr.description
                 # if attr.cardinality:
                 #     print("Cardinality:", attr.cardinality)
 
@@ -67,9 +77,9 @@ def generate(
             _object_id = obj.object_id
             _attributes = sorted(obj.attributes)
             for attr in _attributes:  # type: Attribute
-                if 'List' in attr.attribute_type:
-                    attr.attribute_type = attr.attribute_type.replace('List', 'list')
-                    range_name = attr.attribute_type.split('<')[1].split('>')[0]
+                if "List" in attr.attribute_type:
+                    attr.attribute_type = attr.attribute_type.replace("List", "list")
+                    range_name = attr.attribute_type.split("<")[1].split(">")[0]
 
                 # model.setdefault("slots", {}).setdefault(
                 #     attr.name,
@@ -84,14 +94,10 @@ def generate(
 
             model["classes"][obj.name] = {
                 "name": obj.name,
-                "description": obj.note.strip(),
-                "attributes": [
-                    {
-                        "name": attr.name
-                    }
-                    for attr in _attributes
-                ],
+                "description": obj.description,
+                "slots": [attr.name for attr in _attributes],
             }
     model["slots"] = _slots
+    print("Writing model to", output_dir)
     with open(f"{output_dir}/{name}.yaml", "w") as fh:
         fh.write(yaml.dump(model, sort_keys=False))
