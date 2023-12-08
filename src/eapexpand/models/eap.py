@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from dataclasses_json import dataclass_json, LetterCase, config
 
 
@@ -10,14 +10,21 @@ from dataclasses_json import dataclass_json, LetterCase, config
 Wrapper dataclasses for the Objects in the EA file
 """
 
-
-DATE_FORMAT = "%m/%d/%y %H:%M:%S"
+DATE_FORMAT = None
 
 
 def decode_date(date_str: Optional[str]) -> datetime:
     """
     Decodes a date string into a datetime object
     """
+    if isinstance(date_str, datetime):
+        return date_str
+    global DATE_FORMAT
+    if DATE_FORMAT is None:
+        if "/" in date_str:
+            DATE_FORMAT = "%m/%d/%y %H:%M:%S"
+        else:
+            DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     return datetime.strptime(date_str, DATE_FORMAT) if date_str else None
 
 
@@ -42,70 +49,135 @@ def decode_flag(flag: int) -> bool:
     return flag == 1
 
 
+class Diagram:
+    def __init__(self, idee: int, name: str, diagram_type: str, version: str):
+        self.id = idee
+        self.name = name
+        self._type = diagram_type
+        self._version = version
+        self._objects = {}
+
+    def add_object(self, sequence: int, model_object: Object) -> None:
+        self._objects[sequence] = model_object
+
+
+class Document:
+    def __init__(
+        self,
+        name: str,
+        packages: List[Package],
+        objects: List[Object],
+        diagrams: List[Diagram],
+    ) -> None:
+        self.name = name
+        self._types = []
+        self._slots = []
+        self._enums = []
+        self._packages = packages
+        self._objects = objects
+        self._diagrams = diagrams
+        # self._attributes = attributes
+        # self._connectors = connectors
+
+    @property
+    def diagrams(self) -> List[Diagram]:
+        return self._diagrams
+
+    @property
+    def packages(self) -> List[Object]:
+        return [x for x in self._objects if isinstance(x, Package)]
+
+    @property
+    def objects(self) -> List[Object]:
+        return self._objects
+
+    def get_object(self, object_id: int) -> Optional[Object]:
+        for obj in self._objects:
+            if obj.object_id == object_id:
+                return obj
+        return None
+
+    @property
+    def attributes(self) -> List[Attribute]:
+        return [x for x in self._objects if isinstance(x, Attribute)]
+
+    @property
+    def connectors(self) -> List[Connector]:
+        return [x for x in self._objects if isinstance(x, Connector)]
+
+    @property
+    def classes(self) -> List[Object]:
+        return [x for x in self._objects if isinstance(x, Class)]
+
+    @property
+    def states(self) -> List[Object]:
+        return [x for x in self._objects if isinstance(x, State)]
+
+    @property
+    def state_nodes(self) -> List[Object]:
+        return [x for x in self._types if isinstance(x, State)]
+
+    @property
+    def used_types(self) -> List[str]:
+        if not self._types:
+            _types = []
+            for obj in self._objects:  # type: Object
+                if obj.attribute_type and obj.attribute_type not in _types:
+                    _types.append(obj.attribute_type)
+            self._types = _types
+        return self._types
+
+    # @classmethod
+    # def from_dict(cls, datatypes: List[DataType], data: Dict[str, Any]) -> Document:
+    #     """
+    #     Create a document from a dictionary
+    #     """
+    #     _objects = [Object.from_dict(x) for x in data.get("objects", [])]
+    #     _attributes = [Attribute.from_dict(x) for x in data.get("attributes", [])]
+    #     _connectors = [Connector.from_dict(x) for x in data.get("connectors", [])]
+    #     return cls(data.get("name"), datatypes, _objects, _attributes, _connectors)
+
+    def merge_definitions(self, definitions: Dict[str, str]):
+        """
+        Merge the definitions into the document
+        """
+        for obj in self.objects:
+            if obj.name in definitions:
+                obj.definition = definitions[obj.name]
+            for attr in obj.attributes:
+                if attr.name in definitions:
+                    attr.definition = definitions[attr.name]
+
+
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class Package:
-    package_id: int = field(metadata=config(field_name="Package_ID"))
-    name: str = field(metadata=config(field_name="Name"))
-    parent_id: int = field(metadata=config(field_name="Parent_ID"))
-    created_date: datetime = field(
-        metadata=config(
-            field_name="CreatedDate", encoder=encode_date, decoder=decode_date
-        )
+class DataType:
+    id: int = field(metadata=config(field_name="DatatypeID"))
+    datatype_type: str = field(metadata=config(field_name="Type"))
+    size: Optional[int] = field(metadata=config(field_name="Size"), default=None)
+    max_prec: Optional[int] = field(metadata=config(field_name="MaxPrec"), default=None)
+    max_scale: Optional[int] = field(
+        metadata=config(field_name="MaxScale"), default=None
     )
-    modified_date: datetime = field(
-        metadata=config(
-            field_name="ModifiedDate", encoder=encode_date, decoder=decode_date
-        )
+    default_len: Optional[int] = field(
+        metadata=config(field_name="DefaultLen"), default=None
     )
-    ea_guid: str = field(metadata=config(field_name="ea_guid"))
-    is_controlled: bool = field(metadata=config(field_name="IsControlled"))
-    protected: bool = field(
-        metadata=config(
-            field_name="Protected", encoder=encode_flag, decoder=decode_flag
-        )
+    default_prec: Optional[int] = field(
+        metadata=config(field_name="DefaultPrec"), default=None
     )
-    use_dtd: bool = field(
-        metadata=config(field_name="UseDTD", encoder=encode_flag, decoder=decode_flag)
+    default_scale: Optional[int] = field(
+        metadata=config(field_name="DefaultScale"), default=None
     )
-    log_xml: bool = field(
-        metadata=config(field_name="LogXML", encoder=encode_flag, decoder=decode_flag)
+    user: Optional[int] = field(metadata=config(field_name="User"), default=None)
+    generic_type: Optional[str] = field(
+        metadata=config(field_name="GenericType"), default=""
     )
-    batch_save: Optional[bool] = field(
-        metadata=config(
-            field_name="BatchSave", encoder=encode_flag, decoder=decode_flag
-        ),
-        default=False,
+    product_name: Optional[str] = field(
+        metadata=config(field_name="Product_Name"), default=""
     )
-    batch_load: Optional[bool] = field(
-        metadata=config(
-            field_name="BatchLoad", encoder=encode_flag, decoder=decode_flag
-        ),
-        default=False,
-    )
-    version: Optional[str] = field(metadata=config(field_name="Version"), default="")
-    last_save_date: Optional[datetime] = field(
-        metadata=config(
-            field_name="LastSaveDate", encoder=encode_date, decoder=decode_date
-        ),
-        default=None,
-    )
-    last_load_date: Optional[datetime] = field(
-        metadata=config(
-            field_name="LastLoadDate", encoder=encode_date, decoder=decode_date
-        ),
-        default=None,
-    )
-    objects: List[Object] = field(default_factory=list)
-    parent_package: Optional[Package] = field(default=None, init=False)
+    datatype: Optional[str] = field(metadata=config(field_name="Datatype"), default="")
+    max_len: Optional[int] = field(metadata=config(field_name="MaxLen"), default=None)
 
-    @property
-    def id(self):
-        return self.package_id
-
-    @property
-    def path(self) -> str:
-        return self.parent_package.path + "." + self.name if self.parent_package else self.name
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
@@ -113,6 +185,7 @@ class Connector:
     """
     Represents a connector in the EAP model
     """
+
     connector_id: int = field(metadata=config(field_name="Connector_ID"))
     connector_type: str = field(metadata=config(field_name="Connector_Type"))
     start_object_id: int = field(metadata=config(field_name="Start_Object_ID"))
@@ -125,14 +198,26 @@ class Connector:
     route_style: int
     is_bold: int
     line_color: int
-    virtual_inheritance: str
     diagram_id: int = field(metadata=config(field_name="DiagramID"))
-    ea_guid: str
-    is_root: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    is_leaf: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    is_spec: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    is_signal: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    is_stimulus: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
+    virtual_inheritance: Optional[str] = field(
+        metadata=config(field_name="VirtualInheritance"), default=""
+    )
+    ea_guid: Optional[str] = field(metadata=config(field_name="ea_guid"), default=None)
+    is_root: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_leaf: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_spec: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_signal: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_stimulus: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
     name: Optional[str] = ""
     dest_card: Optional[str] = field(metadata=config(field_name="DestCard"), default="")
     source_card: Optional[str] = field(
@@ -162,6 +247,21 @@ class Connector:
     dest_style: Optional[str] = ""
     source_is_navigable: Optional[int] = -1
     dest_is_navigable: Optional[int] = -1
+    package_data_1: Optional[str] = field(
+        metadata=config(field_name="PDATA1"), default=""
+    )
+    package_data_2: Optional[str] = field(
+        metadata=config(field_name="PDATA2"), default=""
+    )
+    package_data_3: Optional[str] = field(
+        metadata=config(field_name="PDATA3"), default=""
+    )
+    package_data_4: Optional[str] = field(
+        metadata=config(field_name="PDATA4"), default=""
+    )
+    package_data_5: Optional[str] = field(
+        metadata=config(field_name="PDATA5"), default=""
+    )
 
     @property
     def id(self):
@@ -175,25 +275,42 @@ class Attribute:
     Represents an attribute of an object in the EAP model
     """
 
-    object_id: int = field(metadata=config(field_name="Object_ID"))
-    name: str = field(metadata=config(field_name="Name"))
-    scope: str
-    containment: str
-    is_static: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    is_collection: bool = field(
-        metadata=config(encoder=encode_flag, decoder=decode_flag)
+    object_id: Optional[int] = field(
+        metadata=config(field_name="Object_ID"), default=None
     )
-    is_ordered: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    allow_duplicates: bool = field(
-        metadata=config(encoder=encode_flag, decoder=decode_flag)
+    name: Optional[str] = field(metadata=config(field_name="Name"), default="")
+    scope: Optional[str] = field(metadata=config(field_name="Scope"), default="")
+    containment: Optional[str] = field(
+        metadata=config(field_name="Containment"), default=""
     )
-    lower_bound: str
-    upper_bound: str
-    derived: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    id: int = field(metadata=config(field_name="ID"))
-    pos: int
-    length: int
-    const: bool
+    is_static: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_collection: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag),
+        default=False,
+    )
+    is_ordered: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    allow_duplicates: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    lower_bound: Optional[str] = field(
+        metadata=config(field_name="LowerBound"), default=None
+    )
+    upper_bound: Optional[str] = field(
+        metadata=config(field_name="UpperBound"), default=None
+    )
+    derived: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    id: Optional[int] = field(metadata=config(field_name="ID"), default=None)
+    pos: Optional[int] = field(metadata=config(field_name="Pos"), default=None)
+    length: Optional[int] = field(metadata=config(field_name="Length"), default=None)
+    const: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
     attribute_type: Optional[str] = field(
         metadata=config(field_name="Type"), default=""
     )
@@ -203,20 +320,35 @@ class Attribute:
     attribute_stereotype: Optional[str] = field(
         metadata=config(field_name="Stereotype"), default=""
     )
+    ea_guid: Optional[str] = field(metadata=config(field_name="ea_guid"), default=None)
     attribute_classifier: Optional[Object] = None
     connector: Optional[Connector] = None
+    note: Optional[str] = field(metadata=config(field_name="Note"), default="")
+    definition: Optional[str] = field(default="")
+
+    def __lt__(self, other):
+        return self.pos < other.pos
 
     @property
     def cardinality(self):
         if self.connector:
             return self.connector.dest_card if self.connector.dest_card else "1..1"
         return "1..1"
-    
+
     def __lt__(self, other):
         return self.pos < other.pos
 
     def __gt__(self, other):
         return self.pos < other.pos
+
+    @property
+    def description(self) -> str:
+        if self.note:
+            return self.note.strip()
+        elif self.definition:
+            return self.definition.strip()
+        else:
+            return ""
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
@@ -226,86 +358,238 @@ class Object:
     Represents an object in the EAP model
     """
 
-    object_id: int = field(metadata=config(field_name="Object_ID"))
-    object_type: str = field(metadata=config(field_name="Object_Type"))
-    diagram_id: int = field(metadata=config(field_name="Diagram_ID"))
-    package_id: int = field(metadata=config(field_name="Package_ID"))
-    ntype: int = field(metadata=config(field_name="NType"))
-    complexity: str
-    effort: int
-    created_date: datetime = field(
-        metadata=config(encoder=encode_date, decoder=decode_date)
+    object_id: int = field(metadata=config(field_name="Object_ID"), default=None)
+    object_type: str = field(metadata=config(field_name="Object_Type"), default="")
+    diagram_id: int = field(metadata=config(field_name="Diagram_ID"), default=None)
+    package_id: int = field(metadata=config(field_name="Package_ID"), default=None)
+    package: Optional[Package] = None
+    ntype: int = field(metadata=config(field_name="NType"), default=0)
+    complexity: Optional[str] = field(
+        metadata=config(field_name="Complexity"), default=""
     )
-    modified_date: datetime = field(
-        metadata=config(encoder=encode_date, decoder=decode_date)
+    effort: Optional[int] = field(metadata=config(field_name="Effort"), default=0)
+    created_date: Optional[datetime] = field(
+        metadata=config(encoder=encode_date, decoder=decode_date), default=None
     )
-    scope: str
-    ea_guid: str
-    parent_id: int = field(metadata=config(field_name="ParentID"))
-    is_root: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    is_leaf: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    is_spec: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
-    is_active: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag))
+    modified_date: Optional[datetime] = field(
+        metadata=config(encoder=encode_date, decoder=decode_date),
+        default=None,
+    )
+    parent_id: int = field(metadata=config(field_name="ParentID"), default=-1)
+    is_root: bool = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_leaf: bool = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_spec: bool = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_active: bool = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
     classifier: Optional[int] = 0
     phase: Optional[str] = ""
     name: Optional[str] = ""
     author: Optional[str] = ""
     version: Optional[str] = ""
     note: Optional[str] = ""
+    ea_guid: Optional[str] = field(metadata=config(field_name="ea_guid"), default=None)
     outgoing_connections: Optional[List[Connector]] = field(default_factory=list)
     incoming_connections: Optional[List[Connector]] = field(default_factory=list)
-    package: Optional[Package] = None
     generalizations: Optional[List[Object]] = field(default_factory=list)
     specializations: Optional[List[Object]] = field(default_factory=list)
+    attributes: Optional[List[Attribute]] = field(default_factory=list)
+    properties: Optional[List[ObjectProperty]] = field(default_factory=list)
+    classifies: Optional[List[Object]] = field(default_factory=list)
+    edges: Optional[List[Connector]] = field(default_factory=list)
+    definition: Optional[str] = field(default="")
+
+    def __lt__(self, other):
+        return self.object_id < other.object_id
 
     def __str__(self):
         return self.name + " " + str(self.object_id)
 
+    @property
+    def property_names(self) -> List[str]:
+        for attr in sorted(self.attributes):
+            yield attr.name
 
-def load_packages(filename) -> Dict[int, Package]:
-    data = {}
-    with open(filename, "r") as f:
-        for line in f:
-            _package = Package.from_json(line)
-            _package.parent_package = data.get(_package.parent_id)
-            data[_package.package_id] = _package
-    return data
-
-
-def load_objects(filename: str) -> Dict[int, Object]:
-    data = {}
-    with open(filename, "r") as f:
-        for line in f:
-            _object = Object.from_json(line)
-            data[_object.object_id] = _object
-    return data
+    @property
+    def description(self) -> str:
+        if self.note:
+            return self.note.strip()
+        elif self.definition:
+            return self.definition.strip()
+        else:
+            return ""
 
 
-def load_attributes(filename: str) -> Dict[int, Attribute]:
-    data = {}
-    with open(filename, "r") as f:
-        for line in f:
-            # object id -> classifier
-            try:
-                _attr = Attribute.from_json(line)
-                if _attr.id in data:
-                    print(f"Warning - duplicated object id: {_attr.id}")
-                data[_attr.id] = _attr
-            except AttributeError as exc:
-                print(f"Error: {exc}", line)
-            except KeyError as exc:
-                print(f"Error: {exc}", line)
-            except TypeError as exc:
-                print(f"Error: {exc}", line)    
-    return data
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class Package(Object):
+    package_id: Optional[int] = field(
+        metadata=config(field_name="Package_ID"), default=None
+    )
+    package_name: Optional[str] = field(default="")
+    parent_id: Optional[int] = field(
+        metadata=config(field_name="Parent_ID"), default=None
+    )
+    created_date: Optional[datetime] = field(
+        metadata=config(
+            field_name="CreatedDate", encoder=encode_date, decoder=decode_date
+        ),
+        default=None,
+    )
+    modified_date: Optional[datetime] = field(
+        metadata=config(
+            field_name="ModifiedDate", encoder=encode_date, decoder=decode_date
+        ),
+        default=None,
+    )
+    is_controlled: Optional[bool] = field(
+        metadata=config(
+            field_name="IsControlled", encoder=encode_flag, decoder=decode_flag
+        ),
+        default=False,
+    )
+    protected: Optional[bool] = field(
+        metadata=config(
+            field_name="Protected", encoder=encode_flag, decoder=decode_flag
+        ),
+        default=False,
+    )
+    use_dtd: Optional[bool] = field(
+        metadata=config(field_name="UseDTD", encoder=encode_flag, decoder=decode_flag),
+        default=False,
+    )
+    log_xml: Optional[bool] = field(
+        metadata=config(field_name="LogXML", encoder=encode_flag, decoder=decode_flag),
+        default=False,
+    )
+    batch_save: Optional[bool] = field(
+        metadata=config(
+            field_name="BatchSave", encoder=encode_flag, decoder=decode_flag
+        ),
+        default=False,
+    )
+    batch_load: Optional[bool] = field(
+        metadata=config(
+            field_name="BatchLoad", encoder=encode_flag, decoder=decode_flag
+        ),
+        default=False,
+    )
+    version: Optional[str] = field(metadata=config(field_name="Version"), default="")
+    last_save_date: Optional[datetime] = field(
+        metadata=config(
+            field_name="LastSaveDate", encoder=encode_date, decoder=decode_date
+        ),
+        default=None,
+    )
+    last_load_date: Optional[datetime] = field(
+        metadata=config(
+            field_name="LastLoadDate", encoder=encode_date, decoder=decode_date
+        ),
+        default=None,
+    )
+    package_flags: Optional[str] = field(default_factory=list)
+    objects: List[Object] = field(default_factory=list)
+    parent: Optional[Package] = field(default=None, init=False)
+    diagram_id: Optional[int] = field(
+        metadata=config(field_name="Diagram_ID"), default=None
+    )
+
+    def merge(self, data: Package):
+        """
+        Merge the data into the package
+        """
+        self.package_id = data.package_id
+        self.package_name = data.name
+        self.parent_id = data.parent_id
+        self.created_date = decode_date(data.created_date)
+        self.modified_date = decode_date(data.modified_date)
+        self.is_controlled = decode_flag(data.is_controlled)
+        self.last_load_date = decode_date(data.last_load_date)
+        self.last_save_date = decode_date(data.last_save_date)
+        self.protected = decode_flag(data.protected)
+        self.use_dtd = decode_flag(data.use_dtd)
+        self.log_xml = decode_flag(data.log_xml)
+        self.batch_save = decode_flag(data.batch_save)
+        self.batch_load = decode_flag(data.batch_load)
+        self.package_flags = data.package_flags.split(";") if data.package_flags else []
+
+    @property
+    def id(self):
+        return self.package_id
+
+    @property
+    def path(self) -> str:
+        return (
+            self.parent_package.path + "." + self.name
+            if self.parent_package
+            else self.name
+        )
 
 
-def load_connectors(filename) -> Dict[int, Connector]:
-    data = {}
-    with open(filename, "r") as f:
-        for line in f:
-            _connector = Connector.from_json(line)
-            data[_connector.connector_id] = _connector
-    return data
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class Class(Object):
+    pass
 
-    
+
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class Enumeration(Object):
+    pass
+
+    @property
+    def enumerated_values(self) -> List[str]:
+        for attr in self.attributes:
+            yield attr.name
+
+
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class Note(Object):
+    pass
+
+
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class Boundary(Object):
+    pass
+
+
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class Text(Object):
+    pass
+
+
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class Artifact(Object):
+    pass
+
+
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class State(Object):
+    pass
+
+
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class StateNode(Object):
+    pass
+
+
+@dataclass_json(letter_case=LetterCase.PASCAL)
+@dataclass
+class ObjectProperty:
+    property_id: int = field(metadata=config(field_name="PropertyID"))
+    object_id: int = field(metadata=config(field_name="Object_ID"))
+    property_name: str = field(metadata=config(field_name="Property"))
+    ea_guid: str = field(metadata=config(field_name="ea_guid"))
+    property_value: str = field(metadata=config(field_name="Value"), default="")

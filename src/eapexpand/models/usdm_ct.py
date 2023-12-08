@@ -49,10 +49,22 @@ class Entity:
     codelist_c_code: Optional[str] = None
     codelist_items: Optional[List[PermissibleValue]] = field(default_factory=list)
     role: Optional[str] = None
+    inherited_from: Optional[str] = None
 
+    @property
+    def qualified_name(self):
+        if not self.logical_data_model_name.lower().startswith(self.entity_name.lower()):
+            name = f"{self.entity_name.lower()}{self.logical_data_model_name[0].upper()}{self.logical_data_model_name[1:]}"
+            return name
+        else:
+            return self.logical_data_model_name
+        
     def get_attribute(self, attribute_name: str):
         for attr in self.attributes:
             if attr.logical_data_model_name == attribute_name:
+                return attr
+            elif attr.qualified_name == attribute_name:
+                print(f"Warning, using a fuzzy match for {attribute_name}")
                 return attr
         return None
 
