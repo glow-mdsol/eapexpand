@@ -21,7 +21,7 @@ def decode_date(date_str: Optional[str]) -> datetime:
         return date_str
     global DATE_FORMAT
     if DATE_FORMAT is None:
-        if '/' in date_str:
+        if "/" in date_str:
             DATE_FORMAT = "%m/%d/%y %H:%M:%S"
         else:
             DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -48,19 +48,41 @@ def decode_flag(flag: int) -> bool:
     """
     return flag == 1
 
+
+class Diagram:
+    def __init__(self, idee: int, name: str, diagram_type: str, version: str):
+        self.id = idee
+        self.name = name
+        self._type = diagram_type
+        self._version = version
+        self._objects = {}
+
+    def add_object(self, sequence: int, model_object: Object) -> None:
+        self._objects[sequence] = model_object
+
+
 class Document:
-    def __init__(self, name: str, 
-                 packages: List[Package],
-                 objects: List[Object]) -> None:
+    def __init__(
+        self,
+        name: str,
+        packages: List[Package],
+        objects: List[Object],
+        diagrams: List[Diagram],
+    ) -> None:
         self.name = name
         self._types = []
         self._slots = []
         self._enums = []
         self._packages = packages
         self._objects = objects
+        self._diagrams = diagrams
         # self._attributes = attributes
         # self._connectors = connectors
-    
+
+    @property
+    def diagrams(self) -> List[Diagram]:
+        return self._diagrams
+
     @property
     def packages(self) -> List[Object]:
         return [x for x in self._objects if isinstance(x, Package)]
@@ -68,7 +90,7 @@ class Document:
     @property
     def objects(self) -> List[Object]:
         return self._objects
-    
+
     def get_object(self, object_id: int) -> Optional[Object]:
         for obj in self._objects:
             if obj.object_id == object_id:
@@ -78,11 +100,11 @@ class Document:
     @property
     def attributes(self) -> List[Attribute]:
         return [x for x in self._objects if isinstance(x, Attribute)]
-    
+
     @property
     def connectors(self) -> List[Connector]:
         return [x for x in self._objects if isinstance(x, Connector)]
-    
+
     @property
     def classes(self) -> List[Object]:
         return [x for x in self._objects if isinstance(x, Class)]
@@ -93,8 +115,8 @@ class Document:
 
     @property
     def state_nodes(self) -> List[Object]:
-        return [x for x in  self._types if isinstance(x, State)]
-    
+        return [x for x in self._types if isinstance(x, State)]
+
     @property
     def used_types(self) -> List[str]:
         if not self._types:
@@ -114,7 +136,19 @@ class Document:
     #     _attributes = [Attribute.from_dict(x) for x in data.get("attributes", [])]
     #     _connectors = [Connector.from_dict(x) for x in data.get("connectors", [])]
     #     return cls(data.get("name"), datatypes, _objects, _attributes, _connectors)
-    
+
+    def merge_definitions(self, definitions: Dict[str, str]):
+        """
+        Merge the definitions into the document
+        """
+        for obj in self.objects:
+            if obj.name in definitions:
+                obj.definition = definitions[obj.name]
+            for attr in obj.attributes:
+                if attr.name in definitions:
+                    attr.definition = definitions[attr.name]
+
+
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
 class DataType:
@@ -122,13 +156,25 @@ class DataType:
     datatype_type: str = field(metadata=config(field_name="Type"))
     size: Optional[int] = field(metadata=config(field_name="Size"), default=None)
     max_prec: Optional[int] = field(metadata=config(field_name="MaxPrec"), default=None)
-    max_scale: Optional[int]  = field(metadata=config(field_name="MaxScale"), default=None)
-    default_len: Optional[int] = field(metadata=config(field_name="DefaultLen"), default=None)
-    default_prec: Optional[int] = field(metadata=config(field_name="DefaultPrec"), default=None)
-    default_scale: Optional[int] = field(metadata=config(field_name="DefaultScale"), default=None)
+    max_scale: Optional[int] = field(
+        metadata=config(field_name="MaxScale"), default=None
+    )
+    default_len: Optional[int] = field(
+        metadata=config(field_name="DefaultLen"), default=None
+    )
+    default_prec: Optional[int] = field(
+        metadata=config(field_name="DefaultPrec"), default=None
+    )
+    default_scale: Optional[int] = field(
+        metadata=config(field_name="DefaultScale"), default=None
+    )
     user: Optional[int] = field(metadata=config(field_name="User"), default=None)
-    generic_type: Optional[str] = field(metadata=config(field_name="GenericType"), default="")
-    product_name: Optional[str] = field(metadata=config(field_name="Product_Name"), default="")
+    generic_type: Optional[str] = field(
+        metadata=config(field_name="GenericType"), default=""
+    )
+    product_name: Optional[str] = field(
+        metadata=config(field_name="Product_Name"), default=""
+    )
     datatype: Optional[str] = field(metadata=config(field_name="Datatype"), default="")
     max_len: Optional[int] = field(metadata=config(field_name="MaxLen"), default=None)
 
@@ -139,6 +185,7 @@ class Connector:
     """
     Represents a connector in the EAP model
     """
+
     connector_id: int = field(metadata=config(field_name="Connector_ID"))
     connector_type: str = field(metadata=config(field_name="Connector_Type"))
     start_object_id: int = field(metadata=config(field_name="Start_Object_ID"))
@@ -152,13 +199,25 @@ class Connector:
     is_bold: int
     line_color: int
     diagram_id: int = field(metadata=config(field_name="DiagramID"))
-    virtual_inheritance: Optional[str] = field(metadata=config(field_name="VirtualInheritance"), default="")
+    virtual_inheritance: Optional[str] = field(
+        metadata=config(field_name="VirtualInheritance"), default=""
+    )
     ea_guid: Optional[str] = field(metadata=config(field_name="ea_guid"), default=None)
-    is_root: Optional[bool] = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
-    is_leaf: Optional[bool] = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
-    is_spec: Optional[bool] = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
-    is_signal: Optional[bool] = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
-    is_stimulus: Optional[bool] = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
+    is_root: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_leaf: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_spec: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_signal: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_stimulus: Optional[bool] = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
     name: Optional[str] = ""
     dest_card: Optional[str] = field(metadata=config(field_name="DestCard"), default="")
     source_card: Optional[str] = field(
@@ -188,12 +247,22 @@ class Connector:
     dest_style: Optional[str] = ""
     source_is_navigable: Optional[int] = -1
     dest_is_navigable: Optional[int] = -1
-    package_data_1: Optional[str] = field(metadata=config(field_name="PDATA1"), default="")
-    package_data_2: Optional[str] = field(metadata=config(field_name="PDATA2"), default="")
-    package_data_3: Optional[str] = field(metadata=config(field_name="PDATA3"), default="")
-    package_data_4: Optional[str] = field(metadata=config(field_name="PDATA4"), default="")
-    package_data_5: Optional[str] = field(metadata=config(field_name="PDATA5"), default="")
-   
+    package_data_1: Optional[str] = field(
+        metadata=config(field_name="PDATA1"), default=""
+    )
+    package_data_2: Optional[str] = field(
+        metadata=config(field_name="PDATA2"), default=""
+    )
+    package_data_3: Optional[str] = field(
+        metadata=config(field_name="PDATA3"), default=""
+    )
+    package_data_4: Optional[str] = field(
+        metadata=config(field_name="PDATA4"), default=""
+    )
+    package_data_5: Optional[str] = field(
+        metadata=config(field_name="PDATA5"), default=""
+    )
+
     @property
     def id(self):
         return self.connector_id
@@ -205,6 +274,7 @@ class Attribute:
     """
     Represents an attribute of an object in the EAP model
     """
+
     object_id: Optional[int] = field(
         metadata=config(field_name="Object_ID"), default=None
     )
@@ -254,10 +324,11 @@ class Attribute:
     attribute_classifier: Optional[Object] = None
     connector: Optional[Connector] = None
     note: Optional[str] = field(metadata=config(field_name="Note"), default="")
+    definition: Optional[str] = field(default="")
 
     def __lt__(self, other):
         return self.pos < other.pos
-    
+
     @property
     def cardinality(self):
         if self.connector:
@@ -270,6 +341,15 @@ class Attribute:
     def __gt__(self, other):
         return self.pos < other.pos
 
+    @property
+    def description(self) -> str:
+        if self.note:
+            return self.note.strip()
+        elif self.definition:
+            return self.definition.strip()
+        else:
+            return ""
+
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
@@ -277,27 +357,37 @@ class Object:
     """
     Represents an object in the EAP model
     """
+
     object_id: int = field(metadata=config(field_name="Object_ID"), default=None)
     object_type: str = field(metadata=config(field_name="Object_Type"), default="")
     diagram_id: int = field(metadata=config(field_name="Diagram_ID"), default=None)
     package_id: int = field(metadata=config(field_name="Package_ID"), default=None)
     package: Optional[Package] = None
     ntype: int = field(metadata=config(field_name="NType"), default=0)
-    complexity: Optional[str] = field(metadata=config(field_name="Complexity"), default="")
+    complexity: Optional[str] = field(
+        metadata=config(field_name="Complexity"), default=""
+    )
     effort: Optional[int] = field(metadata=config(field_name="Effort"), default=0)
     created_date: Optional[datetime] = field(
-        metadata=config(encoder=encode_date, decoder=decode_date),
-        default=None
+        metadata=config(encoder=encode_date, decoder=decode_date), default=None
     )
     modified_date: Optional[datetime] = field(
         metadata=config(encoder=encode_date, decoder=decode_date),
         default=None,
     )
     parent_id: int = field(metadata=config(field_name="ParentID"), default=-1)
-    is_root: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
-    is_leaf: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
-    is_spec: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
-    is_active: bool = field(metadata=config(encoder=encode_flag, decoder=decode_flag), default=False)
+    is_root: bool = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_leaf: bool = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_spec: bool = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
+    is_active: bool = field(
+        metadata=config(encoder=encode_flag, decoder=decode_flag), default=False
+    )
     classifier: Optional[int] = 0
     phase: Optional[str] = ""
     name: Optional[str] = ""
@@ -313,10 +403,11 @@ class Object:
     properties: Optional[List[ObjectProperty]] = field(default_factory=list)
     classifies: Optional[List[Object]] = field(default_factory=list)
     edges: Optional[List[Connector]] = field(default_factory=list)
+    definition: Optional[str] = field(default="")
 
     def __lt__(self, other):
         return self.object_id < other.object_id
-    
+
     def __str__(self):
         return self.name + " " + str(self.object_id)
 
@@ -324,6 +415,16 @@ class Object:
     def property_names(self) -> List[str]:
         for attr in sorted(self.attributes):
             yield attr.name
+
+    @property
+    def description(self) -> str:
+        if self.note:
+            return self.note.strip()
+        elif self.definition:
+            return self.definition.strip()
+        else:
+            return ""
+
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
@@ -360,8 +461,8 @@ class Package(Object):
         default=False,
     )
     use_dtd: Optional[bool] = field(
-        metadata=config(field_name="UseDTD", encoder=encode_flag, decoder=decode_flag), 
-        default=False
+        metadata=config(field_name="UseDTD", encoder=encode_flag, decoder=decode_flag),
+        default=False,
     )
     log_xml: Optional[bool] = field(
         metadata=config(field_name="LogXML", encoder=encode_flag, decoder=decode_flag),
@@ -395,7 +496,9 @@ class Package(Object):
     package_flags: Optional[str] = field(default_factory=list)
     objects: List[Object] = field(default_factory=list)
     parent: Optional[Package] = field(default=None, init=False)
-    diagram_id: Optional[int] = field(metadata=config(field_name="Diagram_ID"), default=None)
+    diagram_id: Optional[int] = field(
+        metadata=config(field_name="Diagram_ID"), default=None
+    )
 
     def merge(self, data: Package):
         """
@@ -445,6 +548,7 @@ class Enumeration(Object):
         for attr in self.attributes:
             yield attr.name
 
+
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
 class Note(Object):
@@ -489,5 +593,3 @@ class ObjectProperty:
     property_name: str = field(metadata=config(field_name="Property"))
     ea_guid: str = field(metadata=config(field_name="ea_guid"))
     property_value: str = field(metadata=config(field_name="Value"), default="")
-
-
