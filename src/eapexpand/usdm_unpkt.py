@@ -1,18 +1,15 @@
 from __future__ import annotations
-from pathlib import Path
-import re
 
-
-from typing import Dict, Optional
 import os
+import re
+from pathlib import Path
+from typing import Dict
 
 from openpyxl import load_workbook
 
-from .models.sqlite_loader import load_from_file
-
-from .models.usdm_ct import CodeList, Entity, PermissibleValue
 from .loader import load_expanded_dir
-
+from .models.sqlite_loader import load_from_file
+from .models.usdm_ct import CodeList, Entity, PermissibleValue
 
 
 def load_usdm_ct(filename: str):
@@ -29,11 +26,11 @@ def load_usdm_ct(filename: str):
                 entities[_name] = Entity.from_row(row)
         elif _role == "Relationship" or _role.startswith("Relationship ("):
             entities[_name].relationships.append(row[3])
-            
-        elif _role in ("Attribute")  or _role.startswith("Attribute ("):
+
+        elif _role in ("Attribute") or _role.startswith("Attribute ("):
             _entity = Entity.from_row(row)
-            if 'inherited from' in _role:
-                pattern = re.compile(r'\(inherited from (.*)[\)]?$')
+            if "inherited from" in _role:
+                pattern = re.compile(r"\(inherited from (.*)[\)]?$")
                 if pattern.search(_role):
                     _inherited_from = pattern.search(_role).group(0)
                     _entity.inherited_from = _inherited_from
@@ -64,16 +61,18 @@ def load_usdm_ct(filename: str):
             # if _attr is None:
             print(f"Attribute {row[2]} not found in entity {_entity.entity_name} ")
             continue
-                # raise ValueError(
-                #     f"Attribute {row[2]} not found in entity {_entity.entity_name} "
-                # )
+            # raise ValueError(
+            #     f"Attribute {row[2]} not found in entity {_entity.entity_name} "
+            # )
         if _attr.codelist_c_code is None:
             _attr.codelist_c_code = codeset.codelist_c_code
         _attr.codelist_items.append(codeset)
     return entities, codelists
 
 
-def main_usdm(source_dir_or_file: str, controlled_term: str, output_dir: str, gen: Dict[str, bool]):
+def main_usdm(
+    source_dir_or_file: str, controlled_term: str, output_dir: str, gen: Dict[str, bool]
+):
     if Path(source_dir_or_file).is_file():
         document = load_from_file(source_dir_or_file)
     else:
@@ -82,25 +81,45 @@ def main_usdm(source_dir_or_file: str, controlled_term: str, output_dir: str, ge
             if source_dir_or_file.endswith("/")
             else os.path.basename(source_dir_or_file)
         )
-        document = load_expanded_dir(source_dir)
+        document = load_expanded_dir(source_dir_or_file)
     ct_content, codelists = load_usdm_ct(controlled_term)
     # name = os.path.basename(os.path.dirname(source_dir)) \
     #     if source_dir.endswith("/") else os.path.basename(source_dir)
+    defintions = {}
+    for concept in ct_content.values():
+        if concept.definition:
+            defintions[concept.entity_name] = concept.definition
+        for attr in concept.attributes:
+            if attr.definition:
+                defintions[attr.logical_data_model_name] = attr.definition
+    document.merge_definitions(defintions)
     for aspect, genflag in gen.items():
+        print("Checking generation of ", aspect, "as", genflag)
         if genflag:
             if aspect == "prisma":
                 from .render.prisma import generate as generate_prisma
-                generate_prisma(document.name, document, ct_content, codelists, output_dir)
+
+                generate_prisma(
+                    document.name, document, ct_content, codelists, output_dir
+                )
             elif aspect == "linkml":
                 from .render.linkml import generate as generate_linkml
-                generate_linkml(document.name, document,  output_dir=output_dir)
+
+                generate_linkml(
+                    document.name,
+                    document,
+                    prefix="https://cdisc.org/usdm",
+                    output_dir=output_dir,
+                )
             elif aspect == "shapes":
                 from .render.shapes import generate as generate_shapes
-                generate_shapes(document.name, document, ct_content, codelists, output_dir)
+
+                generate_shapes(
+                    document.name, document, ct_content, codelists, output_dir
+                )
             else:
                 raise ValueError(f"Unknown aspect: {aspect}")
-    else:
-        # always generate the workbook
-        from .render.usdm_workbook import generate as generate_workbook
-        _ = generate_workbook(document.name, document, ct_content, codelists, output_dir)
-    
+    # always generate the workbook
+    from .render.usdm_workbook import generate as generate_workbook
+
+    _ = generate_workbook(document.name, document, ct_content, codelists, output_dir)
