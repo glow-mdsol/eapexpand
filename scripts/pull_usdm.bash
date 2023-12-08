@@ -13,6 +13,13 @@ echo "Pulling USDM from ${REMOTE}"
 
 curl -LJO $REMOTE --output-dir $INPUTDIR 
 
+FILETYPE=$(file $INPUTDIR/USDM_UML.qea | cut -d' ' -f2)
+
+if [ "$FILETYPE" != "SQLite" ]; then
+    echo "Branch gone"
+    exit 1
+fi
+
 # Rename the file to match the branch name
 mv $INPUTDIR/USDM_UML.qea $INPUTDIR/${BRANCH}_USDM_UML.qea
 
@@ -22,3 +29,5 @@ echo "Pulling USDM CT from ${REMOTE_CT}"
 
 curl -LJO $REMOTE_CT --output-dir $INPUTDIR 
 
+# Rename the CT to match the branch name
+mv $INPUTDIR/USDM_CT.xlsx $INPUTDIR/${BRANCH}_USDM_CT.xlsx
