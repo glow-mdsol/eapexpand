@@ -32,6 +32,7 @@ def generate(
     Generates the Excel Representation of the model
     :param name: The name of the model - guides what the output file is called
     """
+    print("Generating USDM Excel file")
     packages = {x.package_id: x for x in document.objects if x.object_type == "Package"}
     # remap the code attribute model to the code list model
     # subset by packages
