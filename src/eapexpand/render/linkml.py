@@ -48,7 +48,8 @@ def generate(
     for obj in document.objects:  # type: Object
         # we should probably use the class attribute of the document here
         if obj.object_type == "Class":
-            _attributes = sorted(obj.attributes)
+            _attributes = sorted(obj.objectAttributes)
+            # across all the attributes
             for attr in _attributes:  # type: Attribute
                 # _slot = _slots.setdefault(attr.name, {"refs": []})
                 _slot = _slots.setdefault(attr.name, {})
@@ -67,19 +68,44 @@ def generate(
                     _types.setdefault(attr.attribute_type, []).append(obj)
                 if attr.description:
                     _slot["description"] = attr.description
+                if attr.lower_bound == 1:
+                    _slot["required"] = True
                 # if attr.cardinality:
                 #     print("Cardinality:", attr.cardinality)
-
+            for attr in obj.outgoing_connections:  # type: Connector
+                _slot = _slots.setdefault(attr.name, {})
+                _slot["range"] = attr.target_object.name
+                # _slot["multivalued"] = True
+                # _slot["required"] = True
+                # _slot["refs"].append(obj.name)
+                # if attr.description:
+                #     _slot["description"] = attr.description
+                # if attr.lower_bound == 1:
+                #     _slot["required"] = True
+                # if attr.cardinality:
+                #     print("Cardinality:", attr.cardinality)
     # create a back reference for the types to the classes
     for obj in document.objects:  # type: Object
         if obj.object_type == "Class":
-            _class = {"slots": []}
+            _class = {
+                "name": obj.name,
+                "description": obj.description,
+            }
             _object_id = obj.object_id
-            _attributes = sorted(obj.attributes)
-            for attr in _attributes:  # type: Attribute
+            _all_attributes = sorted(obj.objectAttributes)
+            _object_slots = []
+            _attributes = {}
+            for attr in _all_attributes:  # type: Attribute
+                # if attr.attribute_type in ("Map"):
+                #     _attributes[attr.name] = dict(type="map", slot_usage="required")
+                # else:
                 if "List" in attr.attribute_type:
                     attr.attribute_type = attr.attribute_type.replace("List", "list")
                     range_name = attr.attribute_type.split("<")[1].split(">")[0]
+                _object_slots.append(attr.name)
+            for conn in obj.outgoing_connections:
+                if conn.connector_type == "Association":
+                    _object_slots.append(conn.name)
 
                 # model.setdefault("slots", {}).setdefault(
                 #     attr.name,
@@ -91,13 +117,25 @@ def generate(
                 #     },
                 # )
                 # _class["slots"].append(attr.name)
-
-            model["classes"][obj.name] = {
-                "name": obj.name,
-                "description": obj.description,
-                "slots": [attr.name for attr in _attributes],
-            }
-    model["slots"] = _slots
+            # add the attributes
+            if _attributes:
+                _class["attributes"] = _attributes
+            if _object_slots:
+                _class["slots"] = _object_slots
+            model["classes"][obj.name] = _class
+    if _slots:
+        model["slots"] = _slots
+    # add a Map class
+    model["classes"]["Map"] = {
+        "name": "Map",
+        "description": "A map of key-value pairs",
+        "slots": [
+            "key",
+            "value",
+        ],
+    }
+    model["slots"]["key"] = {"range": "string"}
+    model["slots"]["value"] = {"range": "string"}
     print("Writing model to", output_dir)
     with open(f"{output_dir}/{name}.yaml", "w") as fh:
         fh.write(yaml.dump(model, sort_keys=False))
