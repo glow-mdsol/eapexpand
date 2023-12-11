@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 import re
 
+
 @dataclass
 class PermissibleValue:
     project: str
@@ -53,12 +54,14 @@ class Entity:
 
     @property
     def qualified_name(self):
-        if not self.logical_data_model_name.lower().startswith(self.entity_name.lower()):
+        if not self.logical_data_model_name.lower().startswith(
+            self.entity_name.lower()
+        ):
             name = f"{self.entity_name.lower()}{self.logical_data_model_name[0].upper()}{self.logical_data_model_name[1:]}"
             return name
         else:
             return self.logical_data_model_name
-        
+
     def get_attribute(self, attribute_name: str):
         for attr in self.attributes:
             if attr.logical_data_model_name == attribute_name:
@@ -85,20 +88,22 @@ class Entity:
         has_value_list = row[8]
         if has_value_list:
             if has_value_list.startswith("Y"):
+                # have a value list
                 entity.has_value_list = True
-                source = re.compile(r"Y \((.*)\)$")
-                m = source.match(row[8])
-                if m:
-                    entity.value_list_description = m.group(1)
-                    if entity.value_list_description.lower().startswith("point out"):
-                        entity.external_value_list = True
-                    else:
-                        entity.external_value_list = False
-                        entity.codelist_c_code = entity.value_list_description
+                if (
+                    "point to" in row[8].lower()
+                    or "points to" in row[8].lower()
+                    or "point out" in row[8].lower()
+                ):
+                    entity.external_value_list = True
+                    entity.value_list_description = row[8][3:-1]
                 else:
-                    raise ValueError(
-                        f"Unable to parse value list description: {row[8]}"
-                    )
+                    entity.external_value_list = False
+                    if "CNEW" in has_value_list:
+                        c_code = "CNEW"
+                    else:
+                        c_code = has_value_list.split("(")[1].split(" ")[-1][:-1]
+                    entity.codelist_c_code = c_code
             elif has_value_list.startswith("N"):
                 entity.has_value_list = False
         return entity
@@ -121,6 +126,3 @@ class CodeList:
             attribute=pvalue.attribute,
             codelist_c_code=pvalue.codelist_c_code,
         )
-
-
-
