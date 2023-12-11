@@ -48,7 +48,7 @@ def generate(
     for obj in document.objects:  # type: Object
         # we should probably use the class attribute of the document here
         if obj.object_type == "Class":
-            _attributes = sorted(obj.objectAttributes)
+            _attributes = sorted(obj.object_attributes)
             # across all the attributes
             for attr in _attributes:  # type: Attribute
                 # _slot = _slots.setdefault(attr.name, {"refs": []})
@@ -92,7 +92,7 @@ def generate(
                 "description": obj.description,
             }
             _object_id = obj.object_id
-            _all_attributes = sorted(obj.objectAttributes)
+            _all_attributes = sorted(obj.object_attributes)
             _object_slots = []
             _attributes = {}
             for attr in _all_attributes:  # type: Attribute
