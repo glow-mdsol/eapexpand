@@ -55,7 +55,7 @@ def load_objects(path: str) -> Document:
     assert (Path(path) / "t_object.json").exists(), f"Path is not a file: {path}"
     # pull the package metadata
     _package_metadata = load_packages(path)
-   
+
     data_types = {}
     with open((Path(path) / "t_datatypes.json"), "r") as f:
         for line in f:
@@ -107,7 +107,7 @@ def load_objects(path: str) -> Document:
         with open((Path(path) / "t_attribute.json"), "r") as f:
             for line in f:
                 _attribute = Attribute.from_json(line)
-                data[_attribute.object_id].attributes.append(_attribute)
+                data[_attribute.object_id].object_attributes.append(_attribute)
                 if _attribute.classifier_id:
                     data[_attribute.classifier_id].classifies.append(_attribute)
 
@@ -131,14 +131,19 @@ def load_objects(path: str) -> Document:
     for pkg_id, _package in _packages.items():
         # bind the objects
         _objects = [x for x in data.values() if x.package_id == pkg_id]
-        print("Package %s (%s) has %s objects" % (_package.name, _package.package_id, len(_objects)))
+        print(
+            "Package %s (%s) has %s objects"
+            % (_package.name, _package.package_id, len(_objects))
+        )
         _package.objects = _objects
         # bind the parent
         _package.parent = _packages.get(_package.parent_id)
-    document = Document(name=os.path.basename(path),
-                        data_types=data_types, 
-                        packages=_packages, 
-                        objects=data.values())
+    document = Document(
+        name=os.path.basename(path),
+        data_types=data_types,
+        packages=_packages,
+        objects=data.values(),
+    )
     return document
 
 
