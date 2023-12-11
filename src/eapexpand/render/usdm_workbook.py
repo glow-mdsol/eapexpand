@@ -118,10 +118,13 @@ def generate(
                     write_cell(sheet, row=row_num, column=5, value=str(obj.note))
                 row_num += 1
 
-                for _attribute in obj.attributes:  # type: Attribute
+                for _attribute in obj.object_attributes:  # type: Attribute
                     attrib = _output.setdefault(_attribute.name, {})
                     if not attrib:
-                        if _generalization and _attribute in _generalization.attributes:
+                        if (
+                            _generalization
+                            and _attribute in _generalization.object_attributes
+                        ):
                             _name = "* " + _attribute.name
                         else:
                             _name = _attribute.name
