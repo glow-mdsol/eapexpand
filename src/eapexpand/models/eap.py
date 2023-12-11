@@ -144,9 +144,13 @@ class Document:
         for obj in self.objects:
             if obj.name in definitions:
                 obj.definition = definitions[obj.name]
-            for attr in obj.attributes:
+            for attr in obj.objectAttributes:
                 if attr.name in definitions:
                     attr.definition = definitions[attr.name]
+            if obj.outgoing_connections:
+                for conn in obj.outgoing_connections:
+                    if conn.name in definitions:
+                        conn.definition = definitions[conn.name]
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
@@ -262,6 +266,9 @@ class Connector:
     package_data_5: Optional[str] = field(
         metadata=config(field_name="PDATA5"), default=""
     )
+    source_object: Optional[Object] = None
+    target_object: Optional[Object] = None
+    definition: Optional[str] = field(default="")
 
     @property
     def id(self):
@@ -332,11 +339,9 @@ class Attribute:
     @property
     def cardinality(self):
         if self.connector:
+            #
             return self.connector.dest_card if self.connector.dest_card else "1..1"
         return "1..1"
-
-    def __lt__(self, other):
-        return self.pos < other.pos
 
     def __gt__(self, other):
         return self.pos < other.pos
@@ -399,11 +404,17 @@ class Object:
     incoming_connections: Optional[List[Connector]] = field(default_factory=list)
     generalizations: Optional[List[Object]] = field(default_factory=list)
     specializations: Optional[List[Object]] = field(default_factory=list)
-    attributes: Optional[List[Attribute]] = field(default_factory=list)
+    objectAttributes: Optional[List[Attribute]] = field(default_factory=list)
     properties: Optional[List[ObjectProperty]] = field(default_factory=list)
     classifies: Optional[List[Object]] = field(default_factory=list)
     edges: Optional[List[Connector]] = field(default_factory=list)
     definition: Optional[str] = field(default="")
+
+    def attributes(self):
+        """
+        Getting the attributes of the object
+        """
+        return sorted(self.objectAttributes)
 
     def __lt__(self, other):
         return self.object_id < other.object_id
@@ -413,7 +424,7 @@ class Object:
 
     @property
     def property_names(self) -> List[str]:
-        for attr in sorted(self.attributes):
+        for attr in sorted(self.objectAttributes):
             yield attr.name
 
     @property
@@ -545,7 +556,7 @@ class Enumeration(Object):
 
     @property
     def enumerated_values(self) -> List[str]:
-        for attr in self.attributes:
+        for attr in self.objectAttributes:
             yield attr.name
 
 
