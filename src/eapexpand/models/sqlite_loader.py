@@ -84,7 +84,7 @@ def load_from_file(filename: str) -> Document:
             "SELECT * FROM t_attribute WHERE object_id = ?", (_object.object_id,)
         ).fetchall():
             _attr = Attribute.from_dict(attr)
-            _object.objectAttributes.append(_attr)
+            _object.object_attributes.append(_attr)
         # # load the outgoing connectors
         # for connector in cur.execute(
         #     "SELECT * FROM t_connector tc " "WHERE tc.start_object_id = ?",
@@ -109,40 +109,28 @@ def load_from_file(filename: str) -> Document:
     # load the connectors
     for conn in cur.execute("SELECT * FROM t_connector").fetchall():
         _conn = Connector.from_dict(conn)  # type: Connector
-        if _conn.connector_type == "Association":
-            _source_object = data.get(_conn.start_object_id)
-            _target_object = data.get(_conn.end_object_id)
-            if _source_object and _target_object:
+        _source_object = data.get(_conn.start_object_id)
+        _target_object = data.get(_conn.end_object_id)
+        if _source_object and _target_object:
+            if _conn.connector_type == "Association":
                 _source_object.outgoing_connections.append(_conn)
                 _target_object.incoming_connections.append(_conn)
                 _conn.source_object = _source_object
                 _conn.target_object = _target_object
-            else:
-                print(
-                    "Orphan connector (associates)",
-                    _conn.name,
-                    "from",
-                    _conn.start_object_id,
-                    "to",
-                    _conn.end_object_id,
-                )
-        elif _conn.connector_type == "Generalization":
-            _source_object = data.get(_conn.start_object_id)
-            _target_object = data.get(_conn.end_object_id)
-            if _source_object and _target_object:
+            elif _conn.connector_type == "Generalization":
                 _source_object.generalizations.append(_conn)
                 _target_object.specializations.append(_conn)
                 _conn.source_object = _source_object
                 _conn.target_object = _target_object
-            else:
-                print(
-                    "Orphan connector (generalises)",
-                    _conn.name,
-                    "from",
-                    _conn.start_object_id,
-                    "to",
-                    _conn.end_object_id,
-                )
+        else:
+            print(
+                f"Orphan connector ({_conn.connector_type})",
+                _conn.name,
+                "from",
+                _conn.start_object_id,
+                "to",
+                _conn.end_object_id,
+            )
     diagrams = []
     print("Loading diagrams")
     for diagram in cur.execute("SELECT * FROM t_diagram").fetchall():

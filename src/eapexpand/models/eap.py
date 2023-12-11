@@ -144,7 +144,7 @@ class Document:
         for obj in self.objects:
             if obj.name in definitions:
                 obj.definition = definitions[obj.name]
-            for attr in obj.objectAttributes:
+            for attr in obj.object_attributes:
                 if attr.name in definitions:
                     attr.definition = definitions[attr.name]
             if obj.outgoing_connections:
@@ -404,7 +404,7 @@ class Object:
     incoming_connections: Optional[List[Connector]] = field(default_factory=list)
     generalizations: Optional[List[Object]] = field(default_factory=list)
     specializations: Optional[List[Object]] = field(default_factory=list)
-    objectAttributes: Optional[List[Attribute]] = field(default_factory=list)
+    object_attributes: Optional[List[Attribute]] = field(default_factory=list)
     properties: Optional[List[ObjectProperty]] = field(default_factory=list)
     classifies: Optional[List[Object]] = field(default_factory=list)
     edges: Optional[List[Connector]] = field(default_factory=list)
@@ -414,7 +414,7 @@ class Object:
         """
         Getting the attributes of the object
         """
-        return sorted(self.objectAttributes)
+        return sorted(self.object_attributes)
 
     def __lt__(self, other):
         return self.object_id < other.object_id
@@ -424,7 +424,7 @@ class Object:
 
     @property
     def property_names(self) -> List[str]:
-        for attr in sorted(self.objectAttributes):
+        for attr in sorted(self.object_attributes):
             yield attr.name
 
     @property
@@ -556,7 +556,7 @@ class Enumeration(Object):
 
     @property
     def enumerated_values(self) -> List[str]:
-        for attr in self.objectAttributes:
+        for attr in self.object_attributes:
             yield attr.name
 
 
