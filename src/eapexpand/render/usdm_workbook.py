@@ -151,9 +151,9 @@ def generate(
                                         )
                     _output[_attribute.name] = attrib
                 for outgoing_connection in obj.outgoing_connections:  # type: Connector
-                    print(
-                        "Adding connection ", outgoing_connection.name, " to ", obj.name
-                    )
+                    # print(
+                    #     "Adding connection ", outgoing_connection.name, " to ", obj.name
+                    # )
                     attrib = dict(
                         attribute_name=outgoing_connection.name,
                         attribute_type=document.get_object(
