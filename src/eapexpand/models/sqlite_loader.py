@@ -29,6 +29,7 @@ def load_from_file(filename: str) -> Document:
     """
     Loads the SQLite file
     """
+    print(f"Loading SQLite Database {filename}")
     assert os.path.exists(filename), f"File does not exist: {filename}"
     conn = sqlite3.connect(filename)
     conn.row_factory = dict_factory
