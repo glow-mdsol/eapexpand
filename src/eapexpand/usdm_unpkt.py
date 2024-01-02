@@ -13,34 +13,46 @@ from .models.usdm_ct import CodeList, Entity, PermissibleValue
 
 
 def load_usdm_ct(filename: str):
+    print("Loading USDM CT")
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File not found: {filename}")
     wbk = load_workbook(filename, read_only=True)
     _ent_attr = wbk["DDF Entities&Attributes"]
     entities = {}
-    for row in _ent_attr.iter_rows(min_row=2, values_only=True):
-        _name = row[1]
-        _role = row[2]
-        if _role == "Entity":
+    headers = []
+    for idx, row in enumerate(_ent_attr.iter_rows(min_row=1, values_only=True)):
+        if idx == 0:
+            for cell in row:
+                headers.append(cell)
+            continue
+        # map the row to a dictionary
+        _row = dict(zip(headers, row))
+        _name = _row["Entity Name"]
+        _role = _row["Role"]
+        _entity = Entity.from_dict(_row)
+        if _entity.role == "Entity":
             if not _name in entities:
-                entities[_name] = Entity.from_row(row)
-        elif _role == "Relationship" or _role.startswith("Relationship ("):
-            entities[_name].relationships.append(row[3])
-
-        elif _role in ("Attribute") or _role.startswith("Attribute ("):
-            _entity = Entity.from_row(row)
-            if "inherited from" in _role:
-                pattern = re.compile(r"\(inherited from (.*)[\)]?$")
-                if pattern.search(_role):
-                    _inherited_from = pattern.search(_role).group(0)
-                    _entity.inherited_from = _inherited_from
-                else:
-                    print(f"Can't match {_role} for {_name}")
+                entities[_name] = _entity
+        elif _entity.role == "Relationship" or _entity.role.startswith("Relationship ("):
+            entities[_name].relationships.append(_entity)
+        elif _entity.role == "Complex Datatype Relationship":
+            entities[_name].complex_datatype_relationships.append(
+                _entity
+            )
+        elif _entity.role in ("Attribute") or _role.startswith("Attribute ("):
+            # if "inherited from" in _role:
+            #     pattern = re.compile(r"\(inherited from (.*)[\)]?$")
+            #     if pattern.search(_role):
+            #         _inherited_from = pattern.search(_role).group(0)
+            #         _entity.inherited_from = _inherited_from
+            #     else:
+            #         print(f"Can't match {_role} for {_name}")
             entities[_name].attributes.append(_entity)
         else:
             raise ValueError(f"Unknown entity type: {row[2]}")
     _value_sets = wbk["DDF valid value sets"]
     codelists = {}
+    missing_codelists = {}
     for row in _value_sets.iter_rows(min_row=7, values_only=True):
         # get the entity
         codeset = PermissibleValue.from_row(row)
@@ -59,7 +71,8 @@ def load_usdm_ct(filename: str):
             # _attr = _entity.get_attribute(_unqualified_name)
             # print(f"Warning: had to munge name: {_attribute} for {_entity.entity_name}")
             # if _attr is None:
-            print(f"Attribute {row[2]} not found in entity {_entity.entity_name} ")
+            missing_codelists[_attribute] = _entity.entity_name
+            # print(f"Attribute {row[2]} not found in entity {_entity.entity_name} ")
             continue
             # raise ValueError(
             #     f"Attribute {row[2]} not found in entity {_entity.entity_name} "
@@ -67,6 +80,10 @@ def load_usdm_ct(filename: str):
         if _attr.codelist_c_code is None:
             _attr.codelist_c_code = codeset.codelist_c_code
         _attr.codelist_items.append(codeset)
+    if missing_codelists:
+        print("Missing Attributes")
+        for attr, entity in missing_codelists.items():
+            print(f"Attribute {attr} not found in entity {entity} ")
     return entities, codelists
 
 
