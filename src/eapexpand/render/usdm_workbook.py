@@ -47,10 +47,11 @@ def generate(
     doc = Workbook()
 
     def write_cell(worksheet, row, column, value, header=False):
+        _value = value if value else ""
         columns = cols.setdefault(worksheet.title, {})
-        columns[column] = max([len(value), columns.get(column, 10)])
+        columns[column] = max([len(_value), columns.get(column, 10)])
         cols[worksheet.title] = columns
-        worksheet.cell(row, column).value = value
+        worksheet.cell(row, column).value = _value
         worksheet.cell(row, column).alignment = Alignment(
             wrap_text=True, vertical="top"
         )
@@ -134,21 +135,23 @@ def generate(
                             attribute_cardinality=_attribute.cardinality,
                             attribute_note=_attribute.note,
                         )
-                        if _ref:
-                            _attr_ref = _ref.get_attribute(_attribute.name)
-                            if _attr_ref:
-                                attrib["definition"] = _attr_ref.definition
-                                attrib["c_code"] = _attr_ref.nci_c_code
-                                attrib["pref_term"] = _attr_ref.preferred_term
-                                if _attr_ref.has_value_list:
-                                    if _attr_ref.external_value_list:
-                                        attrib[
-                                            "external_value_list"
-                                        ] = _attr_ref.value_list_description
-                                    else:
-                                        attrib["codelist"] = (
-                                            _attr_ref.value_list_description or ""
-                                        )
+                        _attr_ref = _ref.get_attribute(_attribute.name)
+                        if _attr_ref:
+                            attrib["definition"] = _attr_ref.definition
+                            attrib["c_code"] = _attr_ref.nci_c_code
+                            attrib["pref_term"] = _attr_ref.preferred_term
+                            if _attr_ref.has_value_list:
+                                if _attr_ref.external_code_list:
+                                    attrib[
+                                        "external_value_list"
+                                    ] = _attr_ref.external_code_list
+                                elif _attr_ref.codelist_code:
+                                    attrib["codelist"] = _attr_ref.codelist_code
+                        else:      
+                            print(
+                                f"Reference not found for attribute {_attribute.name} in {_ref.entity_name}"
+                            )
+
                     _output[_attribute.name] = attrib
                 for outgoing_connection in obj.outgoing_connections:  # type: Connector
                     # print(
@@ -162,22 +165,21 @@ def generate(
                         attribute_cardinality=outgoing_connection.dest_card,
                         attribute_note=None,
                     )
-                    if _ref:
-                        _attr_ref = _ref.get_attribute(outgoing_connection.name)
+                    _attr_ref = _ref.get_attribute(outgoing_connection.name)
 
-                        if _attr_ref:
-                            attrib["definition"] = _attr_ref.definition
-                            attrib["c_code"] = _attr_ref.nci_c_code
-                            attrib["pref_term"] = _attr_ref.preferred_term
-                            if _attr_ref.has_value_list:
-                                if _attr_ref.external_value_list:
-                                    attrib[
-                                        "external_value_list"
-                                    ] = _attr_ref.value_list_description
-                                else:
-                                    attrib["codelist"] = (
-                                        _attr_ref.value_list_description or ""
-                                    )
+                    if _attr_ref:
+                        attrib["definition"] = _attr_ref.definition
+                        attrib["c_code"] = _attr_ref.nci_c_code
+                        attrib["pref_term"] = _attr_ref.preferred_term
+                        if _attr_ref.has_value_list:
+                            if _attr_ref.external_code_list:
+                                attrib["external_value_list"] = _attr_ref.external_code_list
+                            if _attr_ref.codelist_code:
+                                attrib["codelist"] = _attr_ref.codelist_code
+                    else:
+                        print(
+                            f"Reference not found for connection {outgoing_connection.name} in {_ref.entity_name}"
+                        )
                     _output[attrib.get("attribute_name")] = attrib
                 # connections = [
                 #     connectors[cid]
