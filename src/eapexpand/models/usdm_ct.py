@@ -47,14 +47,11 @@ class Entity:
     preferred_term: Optional[str] = field(metadata=config(field_name="CT Item Preferred Name"))
     synonyms: Optional[List[str]] = field(default_factory=list, metadata=config(field_name="Synonym(s)"))
     definition: Optional[str] = field(default=None, metadata=config(field_name="Definition"))
-    has_value_list: Optional[str] = field(default=None, metadata=config(field_name="Has Value List"))
+    value_list: Optional[str] = field(default=None, metadata=config(field_name="Has Value List"))
     codelist_url: Optional[str] = field(default=None, metadata=config(field_name="Codelist URL"))
     inherited_from: Optional[str] = field(default=None, metadata=config(field_name="Inherited From"))
-    value_list_description: Optional[str] = None
-    external_value_list: Optional[str] = None
     attributes: Optional[List[Entity]] = field(default_factory=list)
     relationships: Optional[List[Entity]] = field(default_factory=list)
-    codelist_c_code: Optional[str] = None
     codelist_items: Optional[List[PermissibleValue]] = field(default_factory=list)
     complex_datatype_relationships: Optional[List[Entity]] = field(default_factory=list)
 
@@ -75,7 +72,63 @@ class Entity:
             elif attr.qualified_name == attribute_name:
                 print(f"Warning, using a fuzzy match for {attribute_name}")
                 return attr
+        for attr in self.complex_datatype_relationships:
+            if attr.logical_data_model_name == attribute_name:
+                return attr
+            elif attr.qualified_name == attribute_name:
+                print(f"Warning, using a fuzzy match for {attribute_name}")
+                return attr
+        for attr in self.relationships:
+            if attr.logical_data_model_name == attribute_name:
+                return attr
+            elif attr.qualified_name == attribute_name:
+                print(f"Warning, using a fuzzy match for {attribute_name}")
+                return attr
         return None
+
+    @property
+    def has_value_list(self) -> bool:
+        if self.value_list:
+            if self.value_list.startswith("Y"):
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    @property
+    def external_code_list(self):
+        if self.has_value_list:
+            _value = None
+            if 'Point' in self.value_list:
+                if 'Point to' in self.value_list:
+                    # Point to
+                    _value = self.value_list[12:-1]
+                elif 'Points to' in self.value_list:
+                    # Points to
+                    _value = self.value_list[13:-1]
+                else: 
+                    # Point out to
+                    _value = self.value_list[16:-1]                   
+            return _value
+        else:
+            return None
+
+    @property
+    def codelist_code(self) -> Optional[str]:
+        if self.has_value_list:
+            c_code = None
+            # have a value list
+            if "point" in self.value_list.lower():
+                return None
+            else:
+                if "CNEW" in self.value_list:
+                    c_code = "CNEW"
+                else:
+                    c_code = self.value_list.split("(")[1].split(" ")[-1][:-1]
+                return c_code
+        else:
+            return None
 
     # @classmethod
     # def from_row(cls, row):
