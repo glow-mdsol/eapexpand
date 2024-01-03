@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from dataclasses_json import dataclass_json, LetterCase, config
 
 
@@ -274,6 +274,16 @@ class Connector:
     def id(self):
         return self.connector_id
 
+    @property
+    def attributes(self) -> List[Attribute]:
+        """
+        Getting the attributes of the object
+        """
+        if self.target_object:
+            return sorted(self.target_object.attributes)
+        else:
+            return []
+
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
@@ -356,6 +366,19 @@ class Attribute:
             return ""
 
 
+class ConnectorAttribute(Attribute):
+
+    @classmethod
+    def from_connector(cls, connector: Connector):
+        _attr = cls()
+        _attr.name = connector.name
+        _attr.attribute_type = connector.target_object.name
+        # this provides the cardinality
+        _attr.connector = connector
+        _attr.pos = connector.start_object_id + connector.end_object_id
+        return _attr
+
+
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
 class Object:
@@ -410,11 +433,25 @@ class Object:
     edges: Optional[List[Connector]] = field(default_factory=list)
     definition: Optional[str] = field(default="")
 
-    def attributes(self):
+    @property
+    def all_attributes(self) -> List[Attribute]:
         """
         Getting the attributes of the object
         """
-        return sorted(self.object_attributes)
+        attributes = self.object_attributes
+        for conn in self.outgoing_connections:
+            attributes.append(ConnectorAttribute.from_connector(conn))
+        return sorted(attributes)
+
+    @property
+    def attributes(self) -> List[Attribute]:
+        """
+        Getting the attributes of the object
+        """
+        if len(self.generalizations) == 0:
+            return sorted(self.all_attributes)
+        else:
+            return sorted(self.all_attributes + self.generalizations[0].attributes)
 
     def __lt__(self, other):
         return self.object_id < other.object_id
