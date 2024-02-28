@@ -58,6 +58,7 @@ def generate(
         if header:
             worksheet.cell(row, column).font = Font(bold=True)
 
+    missing_references = {"objects": [], "attributes": [], "connections": []}
     # Write the package sheet
     wkst = doc.active
     wkst.title = "Packages"
@@ -94,7 +95,8 @@ def generate(
                 else:
                     _generalization = None
                 if _ref is None:
-                    print("WARNING: Reference not found for " + obj.name)
+                    if obj.name not in missing_references.get("objects"):
+                        missing_references["objects"].append(obj.name)
                 # _attributes = sorted(
                 #     [
                 #         attributes[attr_id]
@@ -113,8 +115,6 @@ def generate(
                         write_cell(
                             sheet, row=row_num, column=7, value=_ref.preferred_term
                         )
-                else:
-                    print(f"Reference not found for {obj.name}")
                 if obj.note:
                     write_cell(sheet, row=row_num, column=5, value=str(obj.note))
                 row_num += 1
@@ -147,10 +147,10 @@ def generate(
                                     ] = _attr_ref.external_code_list
                                 elif _attr_ref.codelist_code:
                                     attrib["codelist"] = _attr_ref.codelist_code
-                        else:      
-                            print(
-                                f"Reference not found for attribute {_attribute.name} in {_ref.entity_name}"
-                            )
+                        else:
+                            missing = (_ref.entity_name, _attribute.name)
+                            if missing not in missing_references.get("attributes"):
+                                missing_references["attributes"].append(missing)
 
                     _output[_attribute.name] = attrib
                 for outgoing_connection in obj.outgoing_connections:  # type: Connector
@@ -173,13 +173,15 @@ def generate(
                         attrib["pref_term"] = _attr_ref.preferred_term
                         if _attr_ref.has_value_list:
                             if _attr_ref.external_code_list:
-                                attrib["external_value_list"] = _attr_ref.external_code_list
+                                attrib[
+                                    "external_value_list"
+                                ] = _attr_ref.external_code_list
                             if _attr_ref.codelist_code:
                                 attrib["codelist"] = _attr_ref.codelist_code
                     else:
-                        print(
-                            f"Reference not found for connection {outgoing_connection.name} in {_ref.entity_name}"
-                        )
+                        missing = (_ref.entity_name, outgoing_connection.name)
+                        if missing not in missing_references.get("connections"):
+                            missing_references["connections"].append(missing)
                     _output[attrib.get("attribute_name")] = attrib
                 # connections = [
                 #     connectors[cid]
@@ -247,6 +249,9 @@ def generate(
     for c_code, _codelist in codelists.items():
         if c_code.strip().upper() == "CNEW":
             continue
+        if _codelist is None:
+            print("Missing codelist: ", c_code)
+            continue
         _sheet = doc.create_sheet(c_code)
         for idx, colheader in enumerate(
             ["Code", "Preferred Term", "Synonyms", "Definition"], start=1
@@ -273,6 +278,13 @@ def generate(
     # create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
+    for element in ("objects", "attributes", "connections"):
+        if missing_references.get(element):
+            for element_diff in missing_references.get(element):
+                if isinstance(element_diff, tuple):
+                    print(f"Missing {element}: {element_diff[0]} -> {element_diff[1]}")
+                else:
+                    print(f"Missing {element}: {element_diff}")
     _name, _ = os.path.splitext(name)
     fname = os.path.join(output_dir, f"{_name}.xlsx")
     doc.save(fname)

@@ -89,11 +89,20 @@ class Document:
 
     @property
     def objects(self) -> List[Object]:
-        return self._objects
+        """
+        Return the objects in the document, ordered by object_id
+        """
+        return sorted(self._objects)
 
     def get_object(self, object_id: int) -> Optional[Object]:
         for obj in self._objects:
             if obj.object_id == object_id:
+                return obj
+        return None
+
+    def get_class_by_name(self, name: str) -> Optional[Class]:
+        for obj in self._objects:
+            if obj.name == name and isinstance(obj, Class):
                 return obj
         return None
 
@@ -268,7 +277,16 @@ class Connector:
     )
     source_object: Optional[Object] = None
     target_object: Optional[Object] = None
+    # a definition if supplied
     definition: Optional[str] = field(default="")
+    # Enumerated value
+    enumeration: Optional[Enumeration] = field(default=None)
+    # eg NCI code/URL
+    reference_url: Optional[str] = field(default=None)
+    # preferred Term
+    preferred_term: Optional[str] = field(default=None)
+    # synonyms
+    synonyms: Optional[List[str]] = field(default_factory=list)
 
     @property
     def id(self):
@@ -341,7 +359,18 @@ class Attribute:
     attribute_classifier: Optional[Object] = None
     connector: Optional[Connector] = None
     note: Optional[str] = field(metadata=config(field_name="Note"), default="")
+    # Definition if supplied
     definition: Optional[str] = field(default="")
+    # Enumerated value
+    enumeration: Optional[Enumeration] = field(default=None)
+    # eg NCI code/URL
+    reference_url: Optional[str] = field(default=None)
+    # preferred Term
+    preferred_term: Optional[str] = field(default=None)
+    # synonyms
+    synonyms: Optional[List[str]] = field(default_factory=list)
+    # codelist
+    codelist: Optional[Any] = None
 
     def __lt__(self, other):
         return self.pos < other.pos
@@ -358,16 +387,15 @@ class Attribute:
 
     @property
     def description(self) -> str:
-        if self.note:
-            return self.note.strip()
-        elif self.definition:
+        if self.definition:
             return self.definition.strip()
+        elif self.note:
+            return self.note.strip()
         else:
             return ""
 
 
 class ConnectorAttribute(Attribute):
-
     @classmethod
     def from_connector(cls, connector: Connector):
         _attr = cls()
@@ -425,13 +453,22 @@ class Object:
     ea_guid: Optional[str] = field(metadata=config(field_name="ea_guid"), default=None)
     outgoing_connections: Optional[List[Connector]] = field(default_factory=list)
     incoming_connections: Optional[List[Connector]] = field(default_factory=list)
-    generalizations: Optional[List[Object]] = field(default_factory=list)
-    specializations: Optional[List[Object]] = field(default_factory=list)
+    generalizations: Optional[List[Connector]] = field(default_factory=list)
+    specializations: Optional[List[Connector]] = field(default_factory=list)
     object_attributes: Optional[List[Attribute]] = field(default_factory=list)
     properties: Optional[List[ObjectProperty]] = field(default_factory=list)
     classifies: Optional[List[Object]] = field(default_factory=list)
     edges: Optional[List[Connector]] = field(default_factory=list)
+    # a definition if supplied
     definition: Optional[str] = field(default="")
+    # Enumerated value
+    enumeration: Optional[Enumeration] = field(default=None)
+    # eg NCI code/URL
+    reference_url: Optional[str] = field(default=None)
+    # preferred Term
+    preferred_term: Optional[str] = field(default=None)
+    # synonyms
+    synonyms: Optional[List[str]] = field(default_factory=list)
 
     @property
     def all_attributes(self) -> List[Attribute]:
@@ -466,10 +503,10 @@ class Object:
 
     @property
     def description(self) -> str:
-        if self.note:
-            return self.note.strip()
-        elif self.definition:
+        if self.definition:
             return self.definition.strip()
+        elif self.note:
+            return self.note.strip()
         else:
             return ""
 
@@ -585,11 +622,61 @@ class Package(Object):
 class Class(Object):
     pass
 
+    def get_attribute(self, attribute_name: str) -> Optional[Attribute | Connector]:
+        for attr in self.all_attributes:
+            if attr.name == attribute_name:
+                return attr
+        return None
+
+
+@dataclass
+class EnumeratedValue:
+    """
+    Represents an element in the EnumeratedValue Set
+    """
+
+    label: str
+    "Concept Code"
+    code: str
+    url: Optional[str] = None
+    submission_value: Optional[str] = None
+    synonyms: Optional[List[str]] = field(default_factory=list)
+    definition: Optional[str] = field(default=None)
+    labels: List[str] = field(default_factory=list)
+
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
 class Enumeration(Object):
-    pass
+    """
+    These represent extensions for the USDM Use case
+    """
+
+    name: Optional[str] = None
+    code: Optional[str] = None
+    datatype: Optional[str] = None
+    url: Optional[str] = None
+    submission_value: Optional[str] = None
+    synonyms: Optional[List[str]] = field(default_factory=list)
+    definition: Optional[str] = field(default=None)
+    values: List[EnumeratedValue] = field(default_factory=list)
+    labels: List[str] = field(default_factory=list)
+
+    def add_value(self, value: EnumeratedValue):
+        self.values.append(value)
+
+    def add_synonym(self, value: str):
+        self.synonyms.append(value) if value not in self.synonyms else None
+
+    def add_definition(self, value: str):
+        self.definition = value
+
+    @property
+    def prefixed_url(self) -> str:
+        if self.url:
+            return self.url
+        else:
+            return f"ncit:{self.code}"
 
     @property
     def enumerated_values(self) -> List[str]:

@@ -1,8 +1,19 @@
 from typing import Optional
 
 import yaml
+from linkml.utils.schema_builder import (
+    SchemaBuilder,
+    SchemaDefinition,
+    ClassDefinition,
+    EnumDefinition,
+    SlotDefinition,
+    PermissibleValue,
+)
+
+from linkml.utils.helpers import convert_to_snake_case
 
 from ..models.eap import Object, Attribute, Connector, Package, Document
+from ..models.usdm_ct import CodeList
 
 IDENTIFIER_TYPES = ["id", "uuid"]
 
@@ -12,6 +23,96 @@ TYPE_MAPPING = {
     "Boolean": "boolean",
     "Float": "float",
 }
+
+
+def generate_schema_builder(
+    name: str,
+    document: Document,
+    prefix: Optional[str] = None,
+    output_dir: Optional[str] = "output",
+):
+    """
+    Use a SchemaBuilder to create the LinkML document
+    """
+    sb = SchemaBuilder(name)
+    # add default elements
+    sb.add_defaults()
+    sb.add_prefix(name, prefix)
+    sb.add_prefix("ncit", "https://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl")
+    for obj in document.objects:
+        if obj.object_type == "Class":
+            # holder for extra attrs
+            _class = ClassDefinition(obj.name)
+            if obj.description:
+                _class.description = obj.description
+            if obj.reference_url:
+                # if a verbatim reference url
+                if obj.reference_url.startswith("http"):
+                    _class.definition_uri = obj.reference_url
+                elif obj.reference_url.startswith("C"):
+                    # if a NCI C-code
+                    _class.definition_uri = "ncit:" + obj.reference_url
+                else:
+                    _class.reference = obj.reference_url
+            if obj.generalizations:
+                _class.is_a = obj.generalizations[0].target_object.name
+                # _class.is_a = super_class.target_object.name
+            if obj.preferred_term:
+                _class.title = obj.preferred_term
+            if obj.synonyms:
+                _class.aliases = obj.synonyms
+            for attr in obj.object_attributes:  # type: Attribute
+                _attr = SlotDefinition(attr.name)  # eg protocolVersion
+                if attr.reference_url:
+                    if attr.reference_url.startswith("http"):
+                        _attr.definition_uri = attr.reference_url
+                    elif attr.reference_url.startswith("C"):
+                        _attr.definition_uri = "ncit:" + attr.reference_url
+                    else:
+                        _attr.reference = attr.reference_url
+                if attr.description:
+                    _attr.description = attr.description
+                if attr.attribute_type:
+                    # Multivalued attributes are represented as lists
+                    if "List" in attr.attribute_type:
+                        _attr.multivalued = True
+                        _attr.range = attr.attribute_type.split("<")[1].split(">")[0]
+                    else:
+                        _attr.range = TYPE_MAPPING.get(
+                            attr.attribute_type, attr.attribute_type
+                        )
+                if attr.lower_bound == 1:
+                    _attr.required = True
+                if attr.preferred_term:
+                    _attr.title = attr.preferred_term
+                if attr.synonyms:
+                    _attr.aliases = attr.synonyms
+                if attr.codelist:
+                    _codelist = attr.codelist  # type: CodeList
+                    # if the item is enumerated
+                    if attr.codelist.concept_c_code not in sb.schema.enums:
+                        _enum = EnumDefinition(_codelist.concept_c_code)
+                        _enum.description = _codelist.definition
+                        _enum.enum_uri = "ncit:" + _codelist.concept_c_code
+                        _enum.code_set = _codelist.concept_c_code
+                        for pv in _codelist.items:
+                            _pv = PermissibleValue(pv.concept_c_code)
+                            _pv.meaning = "ncit:" + pv.concept_c_code
+                            if pv.preferred_term:
+                                _pv.title = pv.preferred_term
+                            if pv.synonyms:
+                                _pv.aliases = pv.synonyms
+                            if pv.definition:
+                                _pv.description = pv.definition
+
+                            _enum.permissible_values[_pv.text] = _pv
+                        sb.add_enum(_enum)
+                    _attr.range = _codelist.concept_c_code
+                _class.attributes[_attr.name] = _attr
+            sb.add_class(_class)
+    print("Writing model to", output_dir)
+    with open(f"{output_dir}/{name}.yaml", "w") as fh:
+        fh.write(yaml.dump(sb.as_dict(), sort_keys=False))
 
 
 def generate(
@@ -31,6 +132,9 @@ def generate(
         "name": name,
         "prefixes": {
             "linkml": dict(prefix_reference="https://w3id.org/linkml/"),
+            "ncit": dict(
+                prefix_reference="https://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl"
+            ),
             name: dict(prefix_reference=prefix),
         },
         "imports": ["linkml:types"],
@@ -39,9 +143,8 @@ def generate(
         "default_curi_maps": ["semweb_context"],
         "classes": {},
         "slots": {},
-        "types": {},
-        "enums": {},
     }
+    _enums = {}
     _types = {}
     _slots = {}
     # create a back reference for the slots to the classes
@@ -56,7 +159,7 @@ def generate(
                 if attr.name in IDENTIFIER_TYPES:
                     _slot["identifier"] = True
                 if attr.attribute_type:
-                    # Multi-valued attributes are represented as lists
+                    # Multivalued attributes are represented as lists
                     if "List" in attr.attribute_type:
                         _slot["multivalued"] = True
                         _slot["range"] = attr.attribute_type.split("<")[1].split(">")[0]
@@ -91,6 +194,10 @@ def generate(
                 "name": obj.name,
                 "description": obj.description,
             }
+            if obj.generalizations:
+                super_class = obj.generalizations[0]  # type: Connector
+                _class["is_a"] = super_class.target_object.name
+
             _object_id = obj.object_id
             _all_attributes = sorted(obj.object_attributes)
             _object_slots = []

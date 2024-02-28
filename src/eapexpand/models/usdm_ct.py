@@ -1,59 +1,58 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
-import re
+"""
+Handles the loading of the USDM CT
+"""
 
+from dataclasses import dataclass, field
+from typing import List, Optional, Dict
 from dataclasses_json import config, dataclass_json
 
 
-@dataclass
-class PermissibleValue:
-    project: str
-    entity: str
-    attribute: str
-    codelist_c_code: str
-    concept_c_code: str
-    preferred_term: str
-    synonyms: Optional[List[str]] = field(default_factory=list)
-    definition: Optional[str] = None
-
-    @classmethod
-    def from_row(cls, row):
-        if row[6]:
-            synonyms = [s.strip() for s in row[6].split(";")]
-        else:
-            synonyms = []
-        return cls(
-            project=row[0],
-            entity=row[1],
-            attribute=row[2],
-            codelist_c_code=row[3],
-            concept_c_code=row[4],
-            preferred_term=row[5],
-            synonyms=synonyms,
-            definition=row[7],
-        )
-
-# Row #	Entity Name	Role	Inherited From	Logical Data Model Name	NCI C-code	CT Item Preferred Name	Synonym(s)	Definition	Has Value List	Codelist URL
-
 @dataclass_json
 @dataclass
-class Entity:
+class DDFEntity:
+    """
+    Represents a single entity in the USDM CT (linked to DDF)
+    """
+
     entity_name: str = field(metadata=config(field_name="Entity Name"))
-    logical_data_model_name: str = field(metadata=config(field_name="Logical Data Model Name"))
+    logical_data_model_name: str = field(
+        metadata=config(field_name="Logical Data Model Name")
+    )
     role: Optional[str] = field(metadata=config(field_name="Role"))
     nci_c_code: Optional[str] = field(metadata=config(field_name="NCI C-code"))
-    preferred_term: Optional[str] = field(metadata=config(field_name="CT Item Preferred Name"))
-    synonyms: Optional[List[str]] = field(default_factory=list, metadata=config(field_name="Synonym(s)"))
-    definition: Optional[str] = field(default=None, metadata=config(field_name="Definition"))
-    value_list: Optional[str] = field(default=None, metadata=config(field_name="Has Value List"))
-    codelist_url: Optional[str] = field(default=None, metadata=config(field_name="Codelist URL"))
-    inherited_from: Optional[str] = field(default=None, metadata=config(field_name="Inherited From"))
-    attributes: Optional[List[Entity]] = field(default_factory=list)
-    relationships: Optional[List[Entity]] = field(default_factory=list)
-    codelist_items: Optional[List[PermissibleValue]] = field(default_factory=list)
-    complex_datatype_relationships: Optional[List[Entity]] = field(default_factory=list)
+    preferred_term: Optional[str] = field(
+        metadata=config(field_name="CT Item Preferred Name")
+    )
+    raw_synonyms: Optional[str] = field(metadata=config(field_name="Synonym(s)"))
+    definition: Optional[str] = field(
+        default=None, metadata=config(field_name="Definition")
+    )
+    value_list: Optional[str] = field(
+        default=None, metadata=config(field_name="Has Value List")
+    )
+    codelist_url: Optional[str] = field(
+        default=None, metadata=config(field_name="Codelist URL")
+    )
+    inherited_from: Optional[str] = field(
+        default=None, metadata=config(field_name="Inherited From")
+    )
+    attributes: Optional[List[DDFEntity]] = field(default_factory=list)
+    relationships: Optional[List[DDFEntity]] = field(default_factory=list)
+    complex_datatype_relationships: Optional[List[DDFEntity]] = field(
+        default_factory=list
+    )
+    # assigned codelist
+    codelist: Optional[CodeList] = None
+
+    @property
+    def synonyms(self):
+        return (
+            [s.strip() for s in self.raw_synonyms.split(";")]
+            if self.raw_synonyms
+            else []
+        )
 
     @property
     def qualified_name(self):
@@ -65,7 +64,16 @@ class Entity:
         else:
             return self.logical_data_model_name
 
-    def get_attribute(self, attribute_name: str):
+    @property
+    def all_attributes(self):
+        return {
+            x.logical_data_model_name: x
+            for x in self.attributes
+            + self.relationships
+            + self.complex_datatype_relationships
+        }
+
+    def get_attribute(self, attribute_name: str) -> Optional[DDFEntity]:
         for attr in self.attributes:
             if attr.logical_data_model_name == attribute_name:
                 return attr
@@ -100,19 +108,26 @@ class Entity:
     def external_code_list(self):
         if self.has_value_list:
             _value = None
-            if 'Point' in self.value_list:
-                if 'Point to' in self.value_list:
+            if "Point" in self.value_list:
+                if "Point to" in self.value_list:
                     # Point to
                     _value = self.value_list[12:-1]
-                elif 'Points to' in self.value_list:
+                elif "Points to" in self.value_list:
                     # Points to
                     _value = self.value_list[13:-1]
-                else: 
+                else:
                     # Point out to
-                    _value = self.value_list[16:-1]                   
+                    _value = self.value_list[16:-1]
+            elif "CNEW" in self.value_list:
+                _value = "CNEW"
+            else:
+                _value = self.value_list.split("(")[1].split(" ")[-1][:-1]
+            # print(
+            #     "Processing",
+            #     self.value_list,
+            #     f"for {self.entity_name}.{self.logical_data_model_name} gave {_value}",
+            # )
             return _value
-        else:
-            return None
 
     @property
     def codelist_code(self) -> Optional[str]:
@@ -168,12 +183,23 @@ class Entity:
     #     return entity
 
 
+@dataclass
 class CodeList:
-    def __init__(self, entity_name: str, attribute: str, codelist_c_code: str):
-        self.entity_name = entity_name
-        self.attribute = attribute
-        self.codelist_c_code = codelist_c_code
-        self.items = []
+    """
+    Mainly a container for permissible values
+    In the CT sheet the values are a list associated with an entity->attribute, in the CDISC Library
+     the binding is missing, so the codelist is the parent rather than something inferred from the record
+    """
+
+    entity_name: Optional[str] = ""
+    attribute_name: Optional[str] = ""
+    concept_c_code: Optional[str] = ""
+    preferred_term: Optional[str] = ""
+    synonyms: Optional[List[str]] = field(default_factory=list)
+    definition: Optional[str] = None
+    submission_value: Optional[str] = None
+    extensible: Optional[bool] = False
+    items: List[PermissibleValue] = field(default_factory=list)
 
     def add_item(self, item: PermissibleValue):
         self.items.append(item)
@@ -181,7 +207,40 @@ class CodeList:
     @classmethod
     def from_pvalue(cls, pvalue: PermissibleValue):
         return cls(
-            entity_name=pvalue.entity,
-            attribute=pvalue.attribute,
-            codelist_c_code=pvalue.codelist_c_code,
+            entity_name=pvalue.entity_name,
+            attribute_name=pvalue.attribute_name,
+            concept_c_code=pvalue.codelist_c_code,
+            preferred_term=pvalue.preferred_term,
+            synonyms=pvalue.synonyms,
+            submission_value=pvalue.submission_value,
+        )
+
+
+@dataclass
+class PermissibleValue:
+    project: str
+    entity_name: str
+    attribute_name: str
+    codelist_c_code: str
+    concept_c_code: str
+    preferred_term: str
+    synonyms: Optional[List[str]] = field(default_factory=list)
+    definition: Optional[str] = None
+    submission_value: Optional[str] = None
+
+    @classmethod
+    def from_row(cls, row):
+        if row[6]:
+            synonyms = [s.strip() for s in row[6].split(";")]
+        else:
+            synonyms = []
+        return cls(
+            project=row[0],
+            entity_name=row[1],
+            attribute_name=row[2],
+            codelist_c_code=row[3],
+            concept_c_code=row[4],
+            preferred_term=row[5],
+            synonyms=synonyms,
+            definition=row[7],
         )

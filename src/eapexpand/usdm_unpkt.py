@@ -86,23 +86,6 @@ def load_usdm_ct(filename: str):
             codelists[codeset.codelist_c_code] = CodeList.from_pvalue(codeset)
         codelists[codeset.codelist_c_code].add_item(codeset)
 
-    # for codelist_name, codelist in codelists.items():
-    #
-    # # get the entity name
-    # _entity = entities[row[1]]
-    # # get the attribute name
-    # _attribute = row[2]
-    # _attr = _entity.get_attribute(_attribute)
-    # # workaround
-    # if _attr is None:
-    #     # there is a reference for an attribute that does not exist
-    #     missing_codelists[_attribute] = _entity.entity_name
-    #     continue
-    # _attr.c.append(codeset)
-    # if missing_codelists:
-    #     print("Missing Attributes")
-    #     for attr, entity in missing_codelists.items():
-    #         print(f"Attribute {attr} not found in entity {entity} ")
     for entity in entities.values():  # type: DDFEntity
         for attr in entity.all_attributes.values():
             if attr.has_value_list:
@@ -143,24 +126,24 @@ def main_usdm(
     # loaded content from the USDM CT
     ct_content, codelists = load_usdm_ct(controlled_term)
     # update the document with the CT content
-    for object in document.objects:
-        if object.object_type == "Class":
+    for entity in document.objects:
+        if entity.object_type == "Class":
             # add the codelist to the class
-            if object.name in ct_content:
+            if entity.name in ct_content:
                 # print(f"Adding CT content for {object.name}")
-                _content = ct_content[object.name]  # type: DDFEntity
+                _content = ct_content[entity.name]  # type: DDFEntity
                 if _content.definition:
                     # add the definition
-                    object.definition = _content.definition
+                    entity.definition = _content.definition
                 if _content.nci_c_code:
                     # add the nci code
-                    object.reference_url = _content.nci_c_code
+                    entity.reference_url = _content.nci_c_code
                 if _content.preferred_term:
-                    object.preferred_term = _content.preferred_term
+                    entity.preferred_term = _content.preferred_term
                 if _content.synonyms:
-                    object.synonyms = _content.synonyms
+                    entity.synonyms = _content.synonyms
                 # combine the attributes
-                for attr in object.object_attributes + object.outgoing_connections:
+                for attr in entity.all_attributes:
                     if _content.get_attribute(attr.name):
                         # match the attribute by name
                         # print(f"Adding CT content for {object.name}.{attr.name}")
@@ -170,13 +153,16 @@ def main_usdm(
                         if _attr.nci_c_code:
                             attr.reference_url = _attr.nci_c_code
                         if _attr.codelist:
+                            print(
+                                f"Adding codelist {_attr.codelist.concept_c_code} to {entity.name}.{attr.name}"
+                            )
                             attr.codelist = _attr.codelist
                         if _attr.synonyms:
                             attr.synonyms = _attr.synonyms
                         if _attr.preferred_term:
                             attr.preferred_term = _attr.preferred_term
         else:
-            print(f"Skipping {object.object_type} {object.name}")
+            print(f"Skipping {entity.object_type} {entity.name}")
     # for concept in ct_content.values():
     #     if concept.definition:
     #         definitions[concept.entity_name] = concept.definition
