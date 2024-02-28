@@ -3,3 +3,5 @@ output
 *.xls
 *.xlsx
 __pycache__
+.env
+
