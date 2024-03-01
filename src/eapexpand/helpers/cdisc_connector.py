@@ -18,8 +18,7 @@ class CDISCCTConnector:
         self.client = requests.Session()
         self.client.headers.update({"api-key": self.api_key})
         self._base_url = "https://api.library.cdisc.org/api"
-        self._package_name = None
-        self._package_id = None
+        self._packages = {}
         self._cache = {}
 
     def get_newest_package(self, vocabulary="sdtmct"):
@@ -54,32 +53,36 @@ class CDISCCTConnector:
                 extensible=True,
             )
         else:
-            if self._package_id is None:
-                self._package_id = self.get_newest_package()
-            results = self.client.get(
-                f"{self._base_url}{self._package_id}/codelists/{codelist_code}"
-            )
+            for package in ("ddfct", "sdtmct", "protocol-ct"):
+                if package not in self._packages:
+                    self._packages[package] = self.get_newest_package(package)
+                # get the package_id
+                package_id = self._packages[package]
+                _url = f"{self._base_url}{package_id}/codelists/{codelist_code}"
+                results = self.client.get(_url)
 
-            codelist = None
-            if results.status_code == 200:
-                dataset = results.json()
-                codelist = CodeList(concept_c_code=dataset["conceptId"])
-                codelist.submission_value = dataset["submissionValue"]
-                codelist.preferred_term = dataset["preferredTerm"]
-                codelist.definition = dataset.get("definition")
-                codelist.extensible = dataset.get("extensible") == "true"
-                codelist.synonyms = dataset.get("synonyms", [])
-                for term in dataset["terms"]:
-                    pv = PermissibleValue(
-                        project="DDF",
-                        entity_name="",
-                        codelist_c_code=dataset["conceptId"],
-                        preferred_term=term["preferredTerm"],
-                        synonyms=term.get("synonyms", []),
-                        definition=term.get("definition"),
-                        attribute_name="",
-                        concept_c_code=term["conceptId"],
-                    )
-                    codelist.add_item(pv)
-            self._cache[codelist_code] = codelist
+                if results.status_code == 200:
+                    dataset = results.json()
+                    codelist = CodeList(concept_c_code=dataset["conceptId"])
+                    codelist.submission_value = dataset["submissionValue"]
+                    codelist.preferred_term = dataset["preferredTerm"]
+                    codelist.definition = dataset.get("definition")
+                    codelist.extensible = dataset.get("extensible") == "true"
+                    codelist.synonyms = dataset.get("synonyms", [])
+                    for term in dataset["terms"]:
+                        pv = PermissibleValue(
+                            project="DDF",
+                            entity_name="",
+                            codelist_c_code=dataset["conceptId"],
+                            preferred_term=term["preferredTerm"],
+                            synonyms=term.get("synonyms", []),
+                            definition=term.get("definition"),
+                            attribute_name="",
+                            concept_c_code=term["conceptId"],
+                        )
+                        codelist.add_item(pv)
+                    self._cache[codelist_code] = codelist
+                    break
+            else:
+                raise ValueError(f"Failed to retrieve codelist {codelist_code}")
         return self._cache[codelist_code]
