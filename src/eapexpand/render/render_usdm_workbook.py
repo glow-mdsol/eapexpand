@@ -118,7 +118,7 @@ def generate(
                 if obj.note:
                     write_cell(sheet, row=row_num, column=5, value=str(obj.note))
                 row_num += 1
-
+                # includes object attributes and connections
                 for _attribute in obj.attributes:  # type: Attribute
                     attrib = _output.setdefault(_attribute.name, {})
                     if not attrib:
@@ -133,7 +133,7 @@ def generate(
                             attribute_name=_name,
                             attribute_type=_attribute.attribute_type,
                             attribute_cardinality=_attribute.cardinality,
-                            attribute_note=_attribute.note,
+                            attribute_note=_attribute.description,
                         )
                         _attr_ref = _ref.get_attribute(_attribute.name)
                         if _attr_ref:
@@ -204,7 +204,7 @@ def generate(
                     _codelist = attrib.get("codelist")
                     if _codelist:
                         _cl = ct_content.get(_codelist)
-                        if _codelist != "CNEW":
+                        if not _codelist.startswith("CNEW"):
                             _codelist_value = '=HYPERLINK("#{}!A2","{}")'.format(
                                 _codelist, _codelist
                             )
