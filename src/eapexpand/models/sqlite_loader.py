@@ -1,5 +1,7 @@
 import os
 import sqlite3
+from pathlib import Path
+
 from .eap import (
     Connector,
     Document,
@@ -25,7 +27,7 @@ def dict_factory(cursor, row):
     return {key: value for key, value in zip(fields, row) if value is not None}
 
 
-def load_from_file(filename: str) -> Document:
+def load_from_file(filename: str, prefix: str | None = None) -> Document:
     """
     Loads the SQLite file
     """
@@ -36,6 +38,10 @@ def load_from_file(filename: str) -> Document:
     cur = conn.cursor()
     _packages = {}
     data = {}
+    if prefix is not None:
+        _prefix = prefix
+    else:
+        _prefix = f"http://example.org/{Path(filename).stem}"
     print("Loading packages")
     for package in cur.execute("SELECT * FROM t_package").fetchall():
         _package = Package.from_dict(package)
@@ -160,6 +166,7 @@ def load_from_file(filename: str) -> Document:
     _name = os.path.splitext(os.path.basename(filename))[0]
     document = Document(
         name=_name,
+        prefix=_prefix,
         packages=list(_packages.values()),
         objects=list(data.values()),
         diagrams=diagrams,
