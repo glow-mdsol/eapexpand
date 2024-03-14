@@ -65,11 +65,13 @@ class Document:
     def __init__(
         self,
         name: str,
+        prefix: str,
         packages: List[Package],
         objects: List[Object],
         diagrams: List[Diagram],
     ) -> None:
         self.name = name
+        self._prefix = prefix
         self._types = []
         self._slots = []
         self._enums = []
@@ -287,6 +289,8 @@ class Connector:
     preferred_term: Optional[str] = field(default=None)
     # synonyms
     synonyms: Optional[List[str]] = field(default_factory=list)
+    # codelist
+    codelist: Optional[Any] = field(default=None)
 
     @property
     def id(self):
@@ -298,9 +302,29 @@ class Connector:
         Getting the attributes of the object
         """
         if self.target_object:
-            return sorted(self.target_object.attributes)
+            return self.target_object.attributes
         else:
             return []
+
+    @property
+    def optional(self) -> Optional[bool]:
+        return self.dest_card.startswith("0")
+
+    @property
+    def multivalued(self) -> Optional[bool]:
+        return self.dest_card.endswith("*")
+
+    @property
+    def description(self):
+        return self.definition
+
+    @property
+    def attribute_type(self):
+        return self.target_object.name
+
+    @property
+    def cardinality(self):
+        return self.dest_card
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
@@ -373,7 +397,9 @@ class Attribute:
     codelist: Optional[Any] = None
 
     def __lt__(self, other):
-        return self.pos < other.pos
+        if "pos" in other.__dict__.keys():
+            return self.pos < other.pos
+        return True
 
     @property
     def cardinality(self):
@@ -381,9 +407,6 @@ class Attribute:
             #
             return self.connector.dest_card if self.connector.dest_card else "1..1"
         return "1..1"
-
-    def __gt__(self, other):
-        return self.pos < other.pos
 
     @property
     def description(self) -> str:
@@ -395,16 +418,19 @@ class Attribute:
             return ""
 
 
-class ConnectorAttribute(Attribute):
-    @classmethod
-    def from_connector(cls, connector: Connector):
-        _attr = cls()
-        _attr.name = connector.name
-        _attr.attribute_type = connector.target_object.name
-        # this provides the cardinality
-        _attr.connector = connector
-        _attr.pos = connector.start_object_id + connector.end_object_id
-        return _attr
+# @dataclass
+# class ConnectorAttribute(Attribute):
+#     dest_card: Optional[str] = None
+#     @classmethod
+#     def from_connector(cls, connector: Connector):
+#         _attr = cls()
+#         _attr.name = connector.name
+#         _attr.attribute_type = connector.target_object.name
+#         # this provides the cardinality
+#         _attr.connector = connector
+#         _attr.pos = connector.start_object_id + connector.end_object_id
+#         _attr.preferred_term = connector
+#         return _attr
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
@@ -471,14 +497,16 @@ class Object:
     synonyms: Optional[List[str]] = field(default_factory=list)
 
     @property
-    def all_attributes(self) -> List[Attribute]:
+    def all_attributes(self) -> List[Attribute | Connector]:
         """
         Getting the attributes of the object
         """
-        attributes = self.object_attributes
-        for conn in self.outgoing_connections:
-            attributes.append(ConnectorAttribute.from_connector(conn))
-        return sorted(attributes)
+        attributes = [(x.pos, x) for x in self.object_attributes]
+        start = max([x[0] for x in attributes]) if attributes else 1
+        for idx, conn in enumerate(self.outgoing_connections, start=start):
+            if conn.connector_type == "Association":
+                attributes.append((idx, conn))
+        return [x[1] for x in sorted(attributes, key=lambda x: x[0])]
 
     @property
     def attributes(self) -> List[Attribute]:
@@ -486,9 +514,9 @@ class Object:
         Getting the attributes of the object
         """
         if len(self.generalizations) == 0:
-            return sorted(self.all_attributes)
+            return self.all_attributes
         else:
-            return sorted(self.all_attributes + self.generalizations[0].attributes)
+            return self.all_attributes + self.generalizations[0].attributes
 
     def __lt__(self, other):
         return self.object_id < other.object_id
