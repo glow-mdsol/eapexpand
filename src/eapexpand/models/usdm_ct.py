@@ -122,11 +122,6 @@ class DDFEntity:
                 _value = "CNEW"
             else:
                 _value = self.value_list.split("(")[1].split(" ")[-1][:-1]
-            # print(
-            #     "Processing",
-            #     self.value_list,
-            #     f"for {self.entity_name}.{self.logical_data_model_name} gave {_value}",
-            # )
             return _value
 
     @property
