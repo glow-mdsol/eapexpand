@@ -89,20 +89,35 @@ def load_usdm_ct(filename: str):
     for entity in entities.values():  # type: DDFEntity
         for attr in entity.all_attributes.values():
             if attr.has_value_list:
-                print(
-                    f"Retrieving codelist {attr.external_code_list} for {entity.entity_name}.{attr.logical_data_model_name}"
-                )
                 if attr.external_code_list is not None:
-                    if attr.external_code_list not in codelists:
-                        # pull the codelist from the API
-
-                        codelist = ct.retrieve_valueset(entity.external_code_list)
-                        codelists[attr.external_code_list] = codelist
-                        # bind the codelist to the attribute
-                        attr.codelist = codelist
-                    else:
-                        # bind the codelist to the attribute
-                        attr.codelist = codelists[attr.external_code_list]
+                    if attr.external_code_list.startswith("C"):
+                        if attr.external_code_list == "CNEW":
+                            # create a new codelist placeholder
+                            codelist = CodeList(
+                                concept_c_code=f"CNEW-{attr.logical_data_model_name}",
+                                submission_value=f"CNEW ({entity.entity_name}.{attr.logical_data_model_name})",
+                                preferred_term=f"New Code for {entity.entity_name}.{attr.logical_data_model_name}",
+                                extensible=True,
+                            )
+                            codelists[f"CNEW-{attr.logical_data_model_name}"] = codelist
+                            attr.codelist = codelist
+                        elif attr.external_code_list not in codelists:
+                            # pull the codelist from the API
+                            print(
+                                f"Retrieving codelist {attr.external_code_list} for {entity.entity_name}.{attr.logical_data_model_name}"
+                            )
+                            codelist = ct.retrieve_valueset(attr.external_code_list)
+                            if codelist:
+                                codelists[attr.external_code_list] = codelist
+                            else:
+                                print(
+                                    f"Retrieving codelist {attr.external_code_list} for {entity.entity_name}.{attr.logical_data_model_name} failed"
+                                )
+                            # bind the codelist to the attribute
+                            attr.codelist = codelist
+                        else:
+                            # bind the codelist to the attribute
+                            attr.codelist = codelists[attr.external_code_list]
                 else:
                     print(
                         f"Extracting {attr.value_list}  for {attr.logical_data_model_name} failed"
@@ -114,8 +129,9 @@ def load_usdm_ct(filename: str):
 def main_usdm(
     source_dir_or_file: str, controlled_term: str, output_dir: str, gen: Dict[str, bool]
 ):
+    NAMESPACE = "https://cdisc.org/usdm"
     if Path(source_dir_or_file).is_file():
-        document = load_from_file(source_dir_or_file)
+        document = load_from_file(source_dir_or_file, NAMESPACE)
     else:
         name = (
             os.path.basename(os.path.dirname(source_dir_or_file))
@@ -186,7 +202,7 @@ def main_usdm(
                 generate_linkml(
                     document.name,
                     document,
-                    prefix="https://cdisc.org/usdm",
+                    schema_id="https://cdisc.org/usdm/" + document.name,
                     output_dir=output_dir,
                 )
             elif aspect == "shapes":
