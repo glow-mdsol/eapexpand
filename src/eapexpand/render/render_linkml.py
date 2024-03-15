@@ -36,6 +36,8 @@ def generate_schema_builder(
     sb = SchemaBuilder(name)
     if schema_id:
         sb.id = schema_id
+    elif document.prefix:
+        sb.id = document.prefix
     # add default elements
     sb.add_defaults()
     sb.add_prefix("ncit", "https://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl")
@@ -58,7 +60,7 @@ def generate_schema_builder(
                     # if a NCI C-code
                     _class.definition_uri = "ncit:" + obj.reference_url
                 else:
-                    _class.reference = obj.reference_url
+                    _class.definition_uri = obj.reference_url
             if obj.generalizations:
                 _class.is_a = obj.generalizations[0].target_object.name
                 # _class.is_a = super_class.target_object.name
@@ -92,7 +94,7 @@ def generate_schema_builder(
                     ):
                         _attr.definition_uri = "ncit:" + attr.reference_url
                     else:
-                        _attr.reference = attr.reference_url
+                        _attr.definition_uri = attr.reference_url
                 if attr.description:
                     _attr.description = attr.description
                 _attr.multivalued = False
