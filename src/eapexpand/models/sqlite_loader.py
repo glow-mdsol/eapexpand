@@ -39,7 +39,11 @@ def load_from_file(filename: str, prefix: str | None = None) -> Document:
     _packages = {}
     data = {}
     if prefix is not None:
-        _prefix = prefix
+        _prefix = (
+            prefix + Path(filename).stem
+            if prefix.endswith("/")
+            else prefix + "/" + Path(filename).stem
+        )
     else:
         _prefix = f"http://example.org/{Path(filename).stem}"
     print("Loading packages")
