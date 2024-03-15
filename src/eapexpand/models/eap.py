@@ -82,6 +82,10 @@ class Document:
         # self._connectors = connectors
 
     @property
+    def prefix(self) -> str:
+        return self._prefix
+
+    @property
     def diagrams(self) -> List[Diagram]:
         return self._diagrams
 
