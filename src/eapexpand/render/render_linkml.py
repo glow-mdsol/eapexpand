@@ -1,5 +1,8 @@
 from typing import Optional, List
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 import yaml
 from linkml.utils.schema_builder import (
     SchemaBuilder,
@@ -17,6 +20,7 @@ IDENTIFIER_TYPES = ["id", "uuid"]
 
 TYPE_MAPPING = {
     "String": "string",
+    "string": "string",
     "Integer": "integer",
     "Boolean": "boolean",
     "Float": "float",
@@ -33,23 +37,31 @@ def generate_schema_builder(
     """
     Use a SchemaBuilder to create the LinkML document
     """
-    sb = SchemaBuilder(name)
     if schema_id:
-        sb.id = schema_id
+        logger.info(f"Using schema_id: {schema_id}")
+        _id = schema_id
     elif document.prefix:
-        sb.id = document.prefix
+        logger.info(f"Using document prefix: {document.prefix}")
+        _id = document.prefix
+
+    sb = SchemaBuilder(name, id=_id)
+    sb.description = document.description
     # add default elements
     sb.add_defaults()
-    sb.add_prefix("ncit", "https://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl")
+    for prefix, uri in document.prefixes.items():
+        sb.add_prefix(prefix, uri)
     _missing_types = []
     # ADD a container
-    sb.add_class(ClassDefinition(name, tree_root=True))
+    # sb.add_class(ClassDefinition(name, tree_root=True))
     for obj in document.objects:
         if obj.object_type == "Class":
             # holder for extra attrs
             _class = ClassDefinition(
                 obj.name,
             )  # type: ClassDefinition
+            if obj.name == document.root_item:
+                _class.tree_root = True
+            
             if obj.description:
                 _class.description = obj.description
             if obj.reference_url:
@@ -183,8 +195,13 @@ def generate_schema_builder(
     for absent_type in set(_missing_types) - set(TYPE_MAPPING.keys()):
         print("Missing type:", absent_type)
     print("Writing model to", output_dir)
+    _schema = sb.as_dict()
+    # add the description, not available for builder
+    _schema["description"] = document.description
+    if document.version:
+        _schema["version"] = document.version
     with open(f"{output_dir}/{name}.yaml", "w") as fh:
-        fh.write(yaml.dump(sb.as_dict(), sort_keys=False))
+        fh.write(yaml.dump(_schema, sort_keys=False))
 
 
 # def generate(

@@ -1,6 +1,10 @@
 import os
 import sqlite3
 from pathlib import Path
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from .eap import (
     Connector,
@@ -27,26 +31,28 @@ def dict_factory(cursor, row):
     return {key: value for key, value in zip(fields, row) if value is not None}
 
 
-def load_from_file(filename: str, prefix: str | None = None) -> Document:
+def load_from_file(filename: str, prefix: str | None = None, name: str | None = None) -> Document:
     """
     Loads the SQLite file
     """
-    print(f"Loading SQLite Database {filename}")
+    logger.info(f"Loading SQLite Database {filename}")
     assert os.path.exists(filename), f"File does not exist: {filename}"
     conn = sqlite3.connect(filename)
     conn.row_factory = dict_factory
     cur = conn.cursor()
     _packages = {}
     data = {}
-    if prefix is not None:
+    if prefix:
+        logger.info(f"Using prefix: {prefix}")
         _prefix = (
             prefix + Path(filename).stem
             if prefix.endswith("/")
             else prefix + "/" + Path(filename).stem
         )
     else:
+        logger.info("No prefix provided, using default")
         _prefix = f"http://example.org/{Path(filename).stem}"
-    print("Loading packages")
+    logger.info("Loading packages")
     for package in cur.execute("SELECT * FROM t_package").fetchall():
         _package = Package.from_dict(package)
         _packages[_package.id] = _package
@@ -54,7 +60,7 @@ def load_from_file(filename: str, prefix: str | None = None) -> Document:
     for _package in _packages.values():
         if _package.parent_id and _package.parent_id != 0:
             _package.parent = _packages.get(_package.parent_id)
-    print("Loading objects")
+    logger.info("Loading objects")
     for obj in cur.execute("SELECT * FROM t_object").fetchall():
         match obj["Object_Type"]:
             case "Class":
@@ -143,7 +149,7 @@ def load_from_file(filename: str, prefix: str | None = None) -> Document:
                 _conn.end_object_id,
             )
     diagrams = []
-    print("Loading diagrams")
+    logger.info("Loading diagrams")
     for diagram in cur.execute("SELECT * FROM t_diagram").fetchall():
         diagram = Diagram(
             diagram["Diagram_ID"],
@@ -167,7 +173,10 @@ def load_from_file(filename: str, prefix: str | None = None) -> Document:
     #     _package.objects = _objects
     #     # bind the parent
     #     _package.parent = _packages.get(_package.parent_id)
-    _name = os.path.splitext(os.path.basename(filename))[0]
+    if name:
+        _name = name
+    else:
+        _name = os.path.splitext(os.path.basename(filename))[0]
     document = Document(
         name=_name,
         prefix=_prefix,

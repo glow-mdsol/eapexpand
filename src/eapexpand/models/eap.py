@@ -78,8 +78,43 @@ class Document:
         self._packages = packages
         self._objects = objects
         self._diagrams = diagrams
+        self._root_item = None
+        self._description = None
+        self._prefixes = {}
+        self._version = None
         # self._attributes = attributes
         # self._connectors = connectors
+
+    @property
+    def version(self) -> Optional[str]:
+        return self._version
+    
+    @version.setter
+    def version(self, value: str) -> None:
+        self._version = value
+        
+    @property
+    def prefixes(self) -> Dict[str, str]:
+        return self._prefixes
+    
+    def add_prefix(self, prefix: str, uri: str) -> None:
+        self._prefixes[prefix] = uri
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._description
+
+    @description.setter
+    def description(self, value: str) -> None:
+        self._description = value
+
+    @property
+    def root_item(self) -> Optional[str]:
+        return self._root_item
+    
+    @root_item.setter
+    def root_item(self, value: str) -> None:
+        self._root_item = value
 
     @property
     def prefix(self) -> str:

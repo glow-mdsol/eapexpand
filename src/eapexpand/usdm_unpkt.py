@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Dict
+import logging
 
 from openpyxl import load_workbook
 from dotenv import load_dotenv
@@ -17,6 +18,8 @@ from .loader import load_expanded_dir
 from .models.sqlite_loader import load_from_file
 from .models.usdm_ct import CodeList, DDFEntity, PermissibleValue
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def load_usdm_ct(filename: str):
     """
@@ -130,15 +133,28 @@ def main_usdm(
     source_dir_or_file: str, controlled_term: str, output_dir: str, gen: Dict[str, bool]
 ):
     NAMESPACE = "https://cdisc.org/usdm"
+    version = Path(source_dir_or_file).name.split("_")[0]
+    name = "USDM" + "_" + version
     if Path(source_dir_or_file).is_file():
-        document = load_from_file(source_dir_or_file, NAMESPACE)
+        logger.info(f"Loading from file {source_dir_or_file}")
+        document = load_from_file(source_dir_or_file, prefix=NAMESPACE, name=name)
     else:
+        logger.info(f"Loading from directory {source_dir_or_file}")
         name = (
             os.path.basename(os.path.dirname(source_dir_or_file))
             if source_dir_or_file.endswith("/")
             else os.path.basename(source_dir_or_file)
         )
         document = load_expanded_dir(source_dir_or_file)
+    document.version = version
+    document.root_item = "Study"
+    document.description = (
+        "Unified Study Definitions Model version 3. The industry standard "
+        "for digital protocol content, defining reusable protocols expressing scientific questions "
+        "via structure and concepts that are reused and referenced downstream, creating a knowledge graph."
+    )
+    document.add_prefix("usdm", NAMESPACE)
+    document.add_prefix("ncit", "https://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl")
     # loaded content from the USDM CT
     ct_content, codelists = load_usdm_ct(controlled_term)
     # update the document with the CT content
@@ -200,8 +216,8 @@ def main_usdm(
                 )
 
                 generate_linkml(
-                    document.name,
-                    document,
+                    name=document.name,
+                    document=document,
                     schema_id="https://cdisc.org/usdm/" + document.name,
                     output_dir=output_dir,
                 )

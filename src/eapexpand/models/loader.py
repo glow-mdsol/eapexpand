@@ -45,7 +45,7 @@ def load_packages(path: str) -> Dict[int, Package]:
     return data
 
 
-def load_objects(path: str) -> Document:
+def load_objects(path: str, prefix: str | None = None, name: str | None = None) -> Document:
     """
     Loads the objects from the EAP file
     - note, includes Packages, Classes, Enumerations, etc
@@ -140,6 +140,7 @@ def load_objects(path: str) -> Document:
         _package.parent = _packages.get(_package.parent_id)
     document = Document(
         name=os.path.basename(path),
+        prefix=prefix,
         data_types=data_types,
         packages=_packages,
         objects=data.values(),
