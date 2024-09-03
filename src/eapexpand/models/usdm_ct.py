@@ -189,23 +189,27 @@ class CodeList:
     entity_name: Optional[str] = ""
     attribute_name: Optional[str] = ""
     concept_c_code: Optional[str] = ""
-    preferred_term: Optional[str] = ""
     synonyms: Optional[List[str]] = field(default_factory=list)
     definition: Optional[str] = None
     submission_value: Optional[str] = None
     extensible: Optional[bool] = False
     items: List[PermissibleValue] = field(default_factory=list)
+    alternate_name: Optional[str] = None
+    preferred_term: Optional[str] = None
 
     def add_item(self, item: PermissibleValue):
         self.items.append(item)
 
     @classmethod
     def from_pvalue(cls, pvalue: PermissibleValue):
+        """
+        Create a codelist from a permissible value
+        """
         return cls(
             entity_name=pvalue.entity_name,
             attribute_name=pvalue.attribute_name,
             concept_c_code=pvalue.codelist_c_code,
-            preferred_term=pvalue.preferred_term,
+            extensible=pvalue.extensible,
             synonyms=pvalue.synonyms,
             submission_value=pvalue.submission_value,
         )
@@ -222,11 +226,12 @@ class PermissibleValue:
     synonyms: Optional[List[str]] = field(default_factory=list)
     definition: Optional[str] = None
     submission_value: Optional[str] = None
+    extensible: Optional[bool] = False
 
     @classmethod
     def from_row(cls, row):
-        if row[6]:
-            synonyms = [s.strip() for s in row[6].split(";")]
+        if row[7]:
+            synonyms = [s.strip() for s in row[7].split(";")]
         else:
             synonyms = []
         return cls(
@@ -234,8 +239,9 @@ class PermissibleValue:
             entity_name=row[1],
             attribute_name=row[2],
             codelist_c_code=row[3],
-            concept_c_code=row[4],
-            preferred_term=row[5],
+            extensible=row[4] == "Yes",
+            concept_c_code=row[5],
+            preferred_term=row[6],
             synonyms=synonyms,
-            definition=row[7],
+            definition=row[8],
         )

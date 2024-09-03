@@ -285,7 +285,6 @@ def generate(
                     print(f"Missing {element}: {element_diff[0]} -> {element_diff[1]}")
                 else:
                     print(f"Missing {element}: {element_diff}")
-    _name, _ = os.path.splitext(name)
-    fname = os.path.join(output_dir, f"{_name}.xlsx")
+    fname = os.path.join(output_dir, f"{name}.xlsx")
     doc.save(fname)
     print(f"Generated USDM Excel file: {fname}")

@@ -97,9 +97,11 @@ def load_usdm_ct(filename: str):
                         if attr.external_code_list == "CNEW":
                             # create a new codelist placeholder
                             codelist = CodeList(
+                                entity_name=entity.entity_name,
+                                attribute_name=attr.logical_data_model_name,
                                 concept_c_code=f"CNEW-{attr.logical_data_model_name}",
                                 submission_value=f"CNEW ({entity.entity_name}.{attr.logical_data_model_name})",
-                                preferred_term=f"New Code for {entity.entity_name}.{attr.logical_data_model_name}",
+                                alternate_name=f"New Code for {entity.entity_name}.{attr.logical_data_model_name}",
                                 extensible=True,
                             )
                             codelists[f"CNEW-{attr.logical_data_model_name}"] = codelist
@@ -133,13 +135,16 @@ def main_usdm(
     source_dir_or_file: str, controlled_term: str, output_dir: str, gen: Dict[str, bool]
 ):
     NAMESPACE = "https://cdisc.org/usdm"
-    version = Path(source_dir_or_file).name.split("_")[0]
-    name = "USDM" + "_" + version
     if Path(source_dir_or_file).is_file():
+        assert Path(source_dir_or_file).suffix == ".qea", "Only QEA files are supported"
         logger.info(f"Loading from file {source_dir_or_file}")
+        # handle the cases, release_3-5-0 and v3.5.0
+        version = Path(source_dir_or_file).stem[:-9]        
+        name = "USDM" + "_" + version
         document = load_from_file(source_dir_or_file, prefix=NAMESPACE, name=name)
     else:
         logger.info(f"Loading from directory {source_dir_or_file}")
+        version = Path(source_dir_or_file).name.split("_")[0]
         name = (
             os.path.basename(os.path.dirname(source_dir_or_file))
             if source_dir_or_file.endswith("/")

@@ -146,12 +146,20 @@ def generate_schema_builder(
                     _attr.aliases = attr.synonyms
                 if attr.codelist:
                     _codelist = attr.codelist  # type: CodeList
+                    if _codelist.preferred_term:
+                        _codelist_name = "".join(_codelist.preferred_term.split())
+                    else:
+                        _codelist_name = f"{_codelist.entity_name}{_codelist.attribute_name.capitalize()}"
                     # if the item is enumerated
-                    if attr.codelist.concept_c_code not in sb.schema.enums:
+                    if _codelist_name not in sb.schema.enums:
                         _enum = EnumDefinition(
-                            _codelist.concept_c_code,
+                            name=_codelist_name
                         )
-                        _enum.title = _codelist.preferred_term
+                        _enum.name = _codelist_name
+                        if _codelist.preferred_term:
+                            _enum.title = _codelist.preferred_term
+                        else:
+                            _enum.title = _codelist.attribute_name
                         if _codelist.synonyms:
                             _enum.aliases = _codelist.synonyms
                         # TODO: imported_from
@@ -159,18 +167,22 @@ def generate_schema_builder(
                         _enum.definition_uri = "ncit:" + _codelist.concept_c_code
                         _enum.enum_uri = "ncit:" + _codelist.concept_c_code
                         _enum.code_set = _codelist.concept_c_code
+                        if _codelist.alternate_name:
+                            # TODO: add a mapping to the alternate name 
+                            pass
                         for pv in _codelist.items:
                             _pv = PermissibleValue(pv.concept_c_code)
                             _pv.meaning = "ncit:" + pv.concept_c_code
                             if pv.preferred_term:
                                 _pv.title = pv.preferred_term
+                                _pv.text = pv.preferred_term
                             if pv.synonyms:
                                 _pv.aliases = pv.synonyms
                             if pv.definition:
                                 _pv.description = pv.definition
                             _enum.permissible_values[_pv.text] = _pv
                         sb.add_enum(_enum)
-                    _attr.range = _codelist.concept_c_code
+                    _attr.range = _codelist_name
                 _attributes.append(_attr)
                 # if _attr.name == "name":
                 #     print("Adding name attribute")

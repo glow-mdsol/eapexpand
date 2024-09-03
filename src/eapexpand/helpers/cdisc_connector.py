@@ -4,6 +4,10 @@ import re
 from typing import Optional
 
 import requests
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from eapexpand.models.usdm_ct import CodeList, PermissibleValue
 
@@ -34,6 +38,8 @@ class CDISCCTConnector:
                 vocab, date = _package_re.match(package["href"]).groups()
                 if vocab == vocabulary:
                     _packages.append((date, package, package["href"]))
+            if not _packages:
+                raise ValueError(f"No packages found for vocabulary {vocabulary}")
             return sorted(_packages)[-1][-1]
         else:
             raise ValueError(f"Failed to retrieve packages: {packages.status_code}")
@@ -53,7 +59,7 @@ class CDISCCTConnector:
                 extensible=True,
             )
         else:
-            for package in ("ddfct", "sdtmct", "protocol-ct"):
+            for package in ("ddfct", "sdtmct", "protocolct", "glossaryct", "ddfct"):
                 if package not in self._packages:
                     self._packages[package] = self.get_newest_package(package)
                 # get the package_id
@@ -84,5 +90,7 @@ class CDISCCTConnector:
                     self._cache[codelist_code] = codelist
                     break
             else:
-                raise ValueError(f"Failed to retrieve codelist {codelist_code}")
+                logger.error(f"Failed to retrieve codelist {codelist_code}")
+                return None
+                #raise ValueError(f"Failed to retrieve codelist {codelist_code}")
         return self._cache[codelist_code]
