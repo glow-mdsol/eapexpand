@@ -17,7 +17,7 @@ def generate(
     Generates the Excel Representation of the model
     :param name: The name of the model - guides what the output file is called
     """
-    HEADERS =  ("Package", "Class", "Attribute", "Type", "Cardinality", "Class Note")
+    HEADERS = ("Package", "Class", "Attribute", "Type", "Cardinality", "Class Note")
     packages = {x.package_id: x for x in document.objects if x.object_type == "Package"}
     # subset by packages
     _partitions = {}
@@ -32,14 +32,18 @@ def generate(
     doc = Workbook()
     # have the specs for the columns internally
     cols = {}
-    def write_cell(worksheet, row, column, value, header = False):
+
+    def write_cell(worksheet, row, column, value, header=False):
         columns = cols.setdefault(worksheet.title, {})
         columns[column] = max([len(value), columns.get(column, 10)])
         cols[worksheet.title] = columns
         worksheet.cell(row, column).value = value
-        worksheet.cell(row, column).alignment = Alignment(wrap_text=True, vertical='top')
+        worksheet.cell(row, column).alignment = Alignment(
+            wrap_text=True, vertical="top"
+        )
         if header:
             worksheet.cell(row, column).font = Font(bold=True)
+
     # write the packages
     wkst = doc.active
     wkst.title = "Packages"
@@ -61,9 +65,7 @@ def generate(
         # Limit on the Sheet Name length
         sheet = doc.create_sheet(_sheet_name)
         # write the header
-        for idx, column in enumerate(
-            HEADERS
-        ):
+        for idx, column in enumerate(HEADERS):
             write_cell(sheet, 1, idx + 1, column, header=True)
         row_num = 2
         # iterate over the objects in the package
@@ -71,12 +73,12 @@ def generate(
             _output = {}
             if obj.object_type == "Class":
                 # write the entity
-                write_cell(sheet, row=row_num, column=1, value = _package_name)
-                write_cell(sheet, row=row_num, column=2, value = obj.name)
+                write_cell(sheet, row=row_num, column=1, value=_package_name)
+                write_cell(sheet, row=row_num, column=2, value=obj.name)
                 if obj.note:
-                    write_cell(sheet, row=row_num, column=6, value = str(obj.note))
+                    write_cell(sheet, row=row_num, column=6, value=str(obj.note))
                 row_num += 1
-                for _attribute in obj.attributes:
+                for _attribute in obj.object_attributes:
                     attrib = _output.setdefault(_attribute.name, {})
                     if not attrib:
                         attrib = dict(
@@ -89,26 +91,44 @@ def generate(
                     _output[_attribute.name] = attrib
                 for outgoing_connection in obj.outgoing_connections:
                     if outgoing_connection.connection_type == "Association":
-                        attrib = dict(attribute_name=outgoing_connection.name,
-                                        attribute_type=objects[outgoing_connection.end_object_id].name,
-                                        attribute_cardinality=outgoing_connection.dest_card,
-                                        attribute_note=None)         
+                        attrib = dict(
+                            attribute_name=outgoing_connection.name,
+                            attribute_type=objects[
+                                outgoing_connection.end_object_id
+                            ].name,
+                            attribute_cardinality=outgoing_connection.dest_card,
+                            attribute_note=None,
+                        )
                         _output[outgoing_connection.name] = attrib
 
                 for _, attrib in enumerate(_output.values()):
-                    write_cell(sheet, row=row_num, column=1, value = _package_name)
-                    write_cell(sheet, row=row_num, column=2, value = obj.name)
-                    write_cell(sheet, row=row_num, column=3, value = attrib["attribute_name"])
-                    write_cell(sheet, row=row_num, column=4, value = attrib["attribute_type"])
-                    write_cell(sheet, row=row_num, column=5, value = attrib[
-                        "attribute_cardinality"
-                    ])
-                    write_cell(sheet, row=row_num, column=6, value = attrib[
-                        "attribute_note"
-                    ])
+                    write_cell(sheet, row=row_num, column=1, value=_package_name)
+                    write_cell(sheet, row=row_num, column=2, value=obj.name)
+                    write_cell(
+                        sheet, row=row_num, column=3, value=attrib["attribute_name"]
+                    )
+                    write_cell(
+                        sheet, row=row_num, column=4, value=attrib["attribute_type"]
+                    )
+                    write_cell(
+                        sheet,
+                        row=row_num,
+                        column=5,
+                        value=attrib["attribute_cardinality"],
+                    )
+                    write_cell(
+                        sheet, row=row_num, column=6, value=attrib["attribute_note"]
+                    )
                     row_num += 1
             else:
-                print("Skipping object: ", obj.name, " of type ", obj.object_type, " in package ", _package_name)
+                print(
+                    "Skipping object: ",
+                    obj.name,
+                    " of type ",
+                    obj.object_type,
+                    " in package ",
+                    _package_name,
+                )
     # set the column widths
     for wks in doc.worksheets:
         _columns = cols.get(wks.title, {})

@@ -1,5 +1,11 @@
 import os
 import sqlite3
+from pathlib import Path
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 from .eap import (
     Connector,
     Document,
@@ -25,17 +31,28 @@ def dict_factory(cursor, row):
     return {key: value for key, value in zip(fields, row) if value is not None}
 
 
-def load_from_file(filename: str) -> Document:
+def load_from_file(filename: str, prefix: str | None = None, name: str | None = None) -> Document:
     """
     Loads the SQLite file
     """
+    logger.info(f"Loading SQLite Database {filename}")
     assert os.path.exists(filename), f"File does not exist: {filename}"
     conn = sqlite3.connect(filename)
     conn.row_factory = dict_factory
     cur = conn.cursor()
     _packages = {}
     data = {}
-    print("Loading packages")
+    if prefix:
+        logger.info(f"Using prefix: {prefix}")
+        _prefix = (
+            prefix + Path(filename).stem
+            if prefix.endswith("/")
+            else prefix + "/" + Path(filename).stem
+        )
+    else:
+        logger.info("No prefix provided, using default")
+        _prefix = f"http://example.org/{Path(filename).stem}"
+    logger.info("Loading packages")
     for package in cur.execute("SELECT * FROM t_package").fetchall():
         _package = Package.from_dict(package)
         _packages[_package.id] = _package
@@ -43,7 +60,7 @@ def load_from_file(filename: str) -> Document:
     for _package in _packages.values():
         if _package.parent_id and _package.parent_id != 0:
             _package.parent = _packages.get(_package.parent_id)
-    print("Loading objects")
+    logger.info("Loading objects")
     for obj in cur.execute("SELECT * FROM t_object").fetchall():
         match obj["Object_Type"]:
             case "Class":
@@ -84,29 +101,55 @@ def load_from_file(filename: str) -> Document:
             "SELECT * FROM t_attribute WHERE object_id = ?", (_object.object_id,)
         ).fetchall():
             _attr = Attribute.from_dict(attr)
-            _object.attributes.append(_attr)
-        # load the outgoing connectors
-        for connector in cur.execute(
-            "SELECT * FROM t_connector tc " "WHERE tc.start_object_id = ?",
-            (_object.object_id,),
-        ).fetchall():
-            _conn = Connector.from_dict(connector)
-            if _conn.connector_type == "Association":
-                # eg protocolStatus: Code
-                _object.outgoing_connections.append(_conn)
-            elif _conn.connector_type == "Generalization":
-                _object.generalizations.append(_conn)
-        # load the incoming connectors
-        for connector in cur.execute(
-            "SELECT * FROM t_connector tc " "WHERE tc.end_object_id = ?",
-            (_object.object_id,),
-        ).fetchall():
-            _conn = Connector.from_dict(connector)
-            _object.incoming_connections.append(_conn)
+            _object.object_attributes.append(_attr)
+        # # load the outgoing connectors
+        # for connector in cur.execute(
+        #     "SELECT * FROM t_connector tc " "WHERE tc.start_object_id = ?",
+        #     (_object.object_id,),
+        # ).fetchall():
+        #     _conn = Connector.from_dict(connector)
+        #     if _conn.connector_type == "Association":
+        #         # eg protocolStatus: Code
+        #         _object.outgoing_connections.append(_conn)
+        #     elif _conn.connector_type == "Generalization":
+        #         _object.generalizations.append(_conn)
+        # # load the incoming connectors
+        # for connector in cur.execute(
+        #     "SELECT * FROM t_connector tc " "WHERE tc.end_object_id = ?",
+        #     (_object.object_id,),
+        # ).fetchall():
+        #     _conn = Connector.from_dict(connector)
+        #     _object.incoming_connections.append(_conn)
+        #     _conn.target_object = _object
         _packages.get(_object.package_id).objects.append(_object)
         data[_object.object_id] = _object
+    # load the connectors
+    for conn in cur.execute("SELECT * FROM t_connector").fetchall():
+        _conn = Connector.from_dict(conn)  # type: Connector
+        _source_object = data.get(_conn.start_object_id)
+        _target_object = data.get(_conn.end_object_id)
+        if _source_object and _target_object:
+            if _conn.connector_type == "Association":
+                _source_object.outgoing_connections.append(_conn)
+                _target_object.incoming_connections.append(_conn)
+                _conn.source_object = _source_object
+                _conn.target_object = _target_object
+            elif _conn.connector_type == "Generalization":
+                _source_object.generalizations.append(_conn)
+                _target_object.specializations.append(_conn)
+                _conn.source_object = _source_object
+                _conn.target_object = _target_object
+        else:
+            print(
+                f"Orphan connector ({_conn.connector_type})",
+                _conn.name,
+                "from",
+                _conn.start_object_id,
+                "to",
+                _conn.end_object_id,
+            )
     diagrams = []
-    print("Loading diagrams")
+    logger.info("Loading diagrams")
     for diagram in cur.execute("SELECT * FROM t_diagram").fetchall():
         diagram = Diagram(
             diagram["Diagram_ID"],
@@ -130,9 +173,13 @@ def load_from_file(filename: str) -> Document:
     #     _package.objects = _objects
     #     # bind the parent
     #     _package.parent = _packages.get(_package.parent_id)
-    _name = os.path.splitext(os.path.basename(filename))[0]
+    if name:
+        _name = name
+    else:
+        _name = os.path.splitext(os.path.basename(filename))[0]
     document = Document(
         name=_name,
+        prefix=_prefix,
         packages=list(_packages.values()),
         objects=list(data.values()),
         diagrams=diagrams,

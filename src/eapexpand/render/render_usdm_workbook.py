@@ -47,16 +47,18 @@ def generate(
     doc = Workbook()
 
     def write_cell(worksheet, row, column, value, header=False):
+        _value = value if value else ""
         columns = cols.setdefault(worksheet.title, {})
-        columns[column] = max([len(value), columns.get(column, 10)])
+        columns[column] = max([len(_value), columns.get(column, 10)])
         cols[worksheet.title] = columns
-        worksheet.cell(row, column).value = value
+        worksheet.cell(row, column).value = _value
         worksheet.cell(row, column).alignment = Alignment(
             wrap_text=True, vertical="top"
         )
         if header:
             worksheet.cell(row, column).font = Font(bold=True)
 
+    missing_references = {"objects": [], "attributes": [], "connections": []}
     # Write the package sheet
     wkst = doc.active
     wkst.title = "Packages"
@@ -93,7 +95,8 @@ def generate(
                 else:
                     _generalization = None
                 if _ref is None:
-                    print("WARNING: Reference not found for " + obj.name)
+                    if obj.name not in missing_references.get("objects"):
+                        missing_references["objects"].append(obj.name)
                 # _attributes = sorted(
                 #     [
                 #         attributes[attr_id]
@@ -112,16 +115,17 @@ def generate(
                         write_cell(
                             sheet, row=row_num, column=7, value=_ref.preferred_term
                         )
-                else:
-                    print(f"Reference not found for {obj.name}")
                 if obj.note:
                     write_cell(sheet, row=row_num, column=5, value=str(obj.note))
                 row_num += 1
-
+                # includes object attributes and connections
                 for _attribute in obj.attributes:  # type: Attribute
                     attrib = _output.setdefault(_attribute.name, {})
                     if not attrib:
-                        if _generalization and _attribute in _generalization.attributes:
+                        if (
+                            _generalization
+                            and _attribute in _generalization.object_attributes
+                        ):
                             _name = "* " + _attribute.name
                         else:
                             _name = _attribute.name
@@ -129,28 +133,30 @@ def generate(
                             attribute_name=_name,
                             attribute_type=_attribute.attribute_type,
                             attribute_cardinality=_attribute.cardinality,
-                            attribute_note=_attribute.note,
+                            attribute_note=_attribute.description,
                         )
-                        if _ref:
-                            _attr_ref = _ref.get_attribute(_attribute.name)
-                            if _attr_ref:
-                                attrib["definition"] = _attr_ref.definition
-                                attrib["c_code"] = _attr_ref.nci_c_code
-                                attrib["pref_term"] = _attr_ref.preferred_term
-                                if _attr_ref.has_value_list:
-                                    if _attr_ref.external_value_list:
-                                        attrib[
-                                            "external_value_list"
-                                        ] = _attr_ref.value_list_description
-                                    else:
-                                        attrib["codelist"] = (
-                                            _attr_ref.value_list_description or ""
-                                        )
+                        _attr_ref = _ref.get_attribute(_attribute.name)
+                        if _attr_ref:
+                            attrib["definition"] = _attr_ref.definition
+                            attrib["c_code"] = _attr_ref.nci_c_code
+                            attrib["pref_term"] = _attr_ref.preferred_term
+                            if _attr_ref.has_value_list:
+                                if _attr_ref.external_code_list:
+                                    attrib[
+                                        "external_value_list"
+                                    ] = _attr_ref.external_code_list
+                                elif _attr_ref.codelist_code:
+                                    attrib["codelist"] = _attr_ref.codelist_code
+                        else:
+                            missing = (_ref.entity_name, _attribute.name)
+                            if missing not in missing_references.get("attributes"):
+                                missing_references["attributes"].append(missing)
+
                     _output[_attribute.name] = attrib
                 for outgoing_connection in obj.outgoing_connections:  # type: Connector
-                    print(
-                        "Adding connection ", outgoing_connection.name, " to ", obj.name
-                    )
+                    # print(
+                    #     "Adding connection ", outgoing_connection.name, " to ", obj.name
+                    # )
                     attrib = dict(
                         attribute_name=outgoing_connection.name,
                         attribute_type=document.get_object(
@@ -159,22 +165,23 @@ def generate(
                         attribute_cardinality=outgoing_connection.dest_card,
                         attribute_note=None,
                     )
-                    if _ref:
-                        _attr_ref = _ref.get_attribute(outgoing_connection.name)
+                    _attr_ref = _ref.get_attribute(outgoing_connection.name)
 
-                        if _attr_ref:
-                            attrib["definition"] = _attr_ref.definition
-                            attrib["c_code"] = _attr_ref.nci_c_code
-                            attrib["pref_term"] = _attr_ref.preferred_term
-                            if _attr_ref.has_value_list:
-                                if _attr_ref.external_value_list:
-                                    attrib[
-                                        "external_value_list"
-                                    ] = _attr_ref.value_list_description
-                                else:
-                                    attrib["codelist"] = (
-                                        _attr_ref.value_list_description or ""
-                                    )
+                    if _attr_ref:
+                        attrib["definition"] = _attr_ref.definition
+                        attrib["c_code"] = _attr_ref.nci_c_code
+                        attrib["pref_term"] = _attr_ref.preferred_term
+                        if _attr_ref.has_value_list:
+                            if _attr_ref.external_code_list:
+                                attrib[
+                                    "external_value_list"
+                                ] = _attr_ref.external_code_list
+                            if _attr_ref.codelist_code:
+                                attrib["codelist"] = _attr_ref.codelist_code
+                    else:
+                        missing = (_ref.entity_name, outgoing_connection.name)
+                        if missing not in missing_references.get("connections"):
+                            missing_references["connections"].append(missing)
                     _output[attrib.get("attribute_name")] = attrib
                 # connections = [
                 #     connectors[cid]
@@ -197,7 +204,7 @@ def generate(
                     _codelist = attrib.get("codelist")
                     if _codelist:
                         _cl = ct_content.get(_codelist)
-                        if _codelist != "CNEW":
+                        if not _codelist.startswith("CNEW"):
                             _codelist_value = '=HYPERLINK("#{}!A2","{}")'.format(
                                 _codelist, _codelist
                             )
@@ -242,6 +249,9 @@ def generate(
     for c_code, _codelist in codelists.items():
         if c_code.strip().upper() == "CNEW":
             continue
+        if _codelist is None:
+            print("Missing codelist: ", c_code)
+            continue
         _sheet = doc.create_sheet(c_code)
         for idx, colheader in enumerate(
             ["Code", "Preferred Term", "Synonyms", "Definition"], start=1
@@ -268,7 +278,13 @@ def generate(
     # create the output directory if it doesn't exist
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
-    _name, _ = os.path.splitext(name)
-    fname = os.path.join(output_dir, f"{_name}.xlsx")
+    for element in ("objects", "attributes", "connections"):
+        if missing_references.get(element):
+            for element_diff in missing_references.get(element):
+                if isinstance(element_diff, tuple):
+                    print(f"Missing {element}: {element_diff[0]} -> {element_diff[1]}")
+                else:
+                    print(f"Missing {element}: {element_diff}")
+    fname = os.path.join(output_dir, f"{name}.xlsx")
     doc.save(fname)
     print(f"Generated USDM Excel file: {fname}")
