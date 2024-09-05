@@ -229,19 +229,32 @@ class PermissibleValue:
     extensible: Optional[bool] = False
 
     @classmethod
-    def from_row(cls, row):
-        if row[7]:
-            synonyms = [s.strip() for s in row[7].split(";")]
+    def from_row(cls, row, has_extensible=False):
+        synonyms = []
+        if has_extensible:
+            if row[7]:
+                synonyms = [s.strip() for s in row[7].split(";")]
+            return cls(
+                project=row[0],
+                entity_name=row[1],
+                attribute_name=row[2],
+                codelist_c_code=row[3],
+                extensible=row[4] == "Yes",
+                concept_c_code=row[5],
+                preferred_term=row[6],
+                synonyms=synonyms,
+                definition=row[8],
+            )
         else:
-            synonyms = []
-        return cls(
-            project=row[0],
-            entity_name=row[1],
-            attribute_name=row[2],
-            codelist_c_code=row[3],
-            extensible=row[4] == "Yes",
-            concept_c_code=row[5],
-            preferred_term=row[6],
-            synonyms=synonyms,
-            definition=row[8],
-        )
+            if row[6]:
+                synonyms = [s.strip() for s in row[6].split(";")]
+            return cls(
+                project=row[0],
+                entity_name=row[1],
+                attribute_name=row[2],
+                codelist_c_code=row[3],
+                concept_c_code=row[4],
+                preferred_term=row[5],
+                synonyms=synonyms,
+                definition=row[7],
+            )
