@@ -1,0 +1,83 @@
+addedAttributes:
+  StudyDesign:
+    - name: conditions
+      description: The conditions of the study design.
+      type: Condition
+      multivalued: true
+    - name: dictionaries
+      description: The dictionaries used in the study design.
+      type: SyntaxTemplateDictionary
+      multivalued: true
+    - name: biomedicalConcepts
+      description: The biomedical concepts used in the study design.
+      type: BiomedicalConcept
+      multivalued: true
+    - name: bcCategories 
+      description: The biomedical concept categories used in the study design.
+      type: BiomedicalConceptCategory
+      multivalued: true
+    - name: bcSurrogates
+      description: The biomedical concept surrogates used in the study design.
+      type: BiomedicalConceptSurrogate
+      multivalued: true
+apiAttributes:
+  bcSurrogates:
+    name: bcSurrogateIds
+  bcCategories:
+    name: bcCategoryIds
+  appliesTo:
+    name: appliesToIds
+  context:
+    name: contextIds
+  members:
+    name: memberIds
+  biomedicalConcepts:
+    name: biomedicalConceptIds
+  previous:
+    name: previousId
+  next:
+    name: nextId
+  activities:
+    name: activityIds
+  timelineExit:
+    name: timelineExitId
+  encounters:
+    name: encounterIds
+  conditionTarget:
+    name: conditionTargetId
+  defaultCondition:
+    name: defaultConditionId
+  relativeFromScheduledInstance:
+    name: relativeFromScheduledInstanceId
+  relativeToScheduledInstance:
+    name: relativeToScheduledInstanceId
+  entry:
+    name: entryId
+  timeline:
+    name: timelineId
+  epoch:
+    name: epochId
+  elements:
+    name: elementIds
+  studyInterventions:
+    name: studyInterventionIds
+  studyIntervention:
+    name: studyInterventionId
+  arm:
+    name: armId
+  populations:
+    name: populationIds
+  documentVersions:
+    name: documentVersionIds
+  children:
+    name: childIds
+  dictionary:
+    name: dictionaryId
+  variableOfInterest:
+    name: variableOfInterestId
+  contentItem:
+    name: contentItemId
+  criteria:
+    name: criterionIds
+  scheduledAt:
+    name: scheduledAtId

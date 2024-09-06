@@ -31,7 +31,12 @@ def dict_factory(cursor, row):
     return {key: value for key, value in zip(fields, row) if value is not None}
 
 
-def load_from_file(filename: str, prefix: str | None = None, name: str | None = None) -> Document:
+def load_from_file(
+    filename: str,
+    prefix: str | None = None,
+    name: str | None = None,
+    api_metadata: dict | None = None,
+) -> Document:
     """
     Loads the SQLite file
     """
@@ -127,7 +132,27 @@ def load_from_file(filename: str, prefix: str | None = None, name: str | None = 
     for conn in cur.execute("SELECT * FROM t_connector").fetchall():
         _conn = Connector.from_dict(conn)  # type: Connector
         _source_object = data.get(_conn.start_object_id)
+        if not _source_object:
+            logger.info(f"Skipping {_conn.connector_id} ({_conn.name}): Source object not found: {_conn.start_object_id}")
+            continue
         _target_object = data.get(_conn.end_object_id)
+        assert _target_object, f"Connector {_conn.connector_id}: Target object not found: {_conn._target_object_id}"
+        if api_metadata:
+            if api_metadata.get("apiAttributes", {}).get(_conn.name):
+                _api_attr_spec = api_metadata["apiAttributes"][_conn.name]
+                # add an API attribute
+                _api_attr = Attribute(
+                    name=_api_attr_spec["name"],
+                    attribute_type="String",
+                    preferred_term="API Attribute for " + _conn.name,
+                    definition="An API attribute added for " + _conn.name,
+                    lower_bound='0' if _conn.optional else '1',
+                    upper_bound='*' if _conn.multivalued else '1',
+                    pos=_attr.pos + 1000,
+                )
+                # print("Adding API attribute", _api_attr.name, "for", _conn.name, "with cardinality", _conn.dest_card)
+                _source_object.object_attributes.append(_api_attr)
+
         if _source_object and _target_object:
             if _conn.connector_type == "Association":
                 _source_object.outgoing_connections.append(_conn)
@@ -165,6 +190,31 @@ def load_from_file(filename: str, prefix: str | None = None, name: str | None = 
             if _object:
                 diagram.add_object(link["Sequence"], _object)
         diagrams.append(diagram)
+    # Add the API attributes
+    if api_metadata:
+        for obj in data.values():
+            if not isinstance(obj, Object):
+                continue
+            if api_metadata.get("addedAttributes", {}).get(obj.name):
+                for attr in api_metadata["addedAttributes"][obj.name]:
+                    print(f"Adding API attribute {attr.get('name')} for {obj.name}")
+                    _target_id = cur.execute(
+                        "SELECT object_id FROM t_object WHERE name = ?", (attr["type"],)
+                    ).fetchone()["Object_ID"]
+                    assert _target_id, f"Object {attr['type']} not found"
+                    assert _target_id in data, f"Object {attr['type']} not found"
+                    _connector = Connector(
+                        connector_type="Association",
+                        name=attr.get("name"),
+                        start_object_id=obj.object_id,
+                        end_object_id=_target_id,
+                        definition=attr.get("description"),
+                        dest_card="0..*" if attr.get("multivalued") else "0..1",
+                        source_object=obj,
+                        target_object=data.get(_target_id),
+                    )
+                    obj.outgoing_connections.append(_connector)
+                    assert _connector in obj.outgoing_connections
     #     _packages = {x.package_id: x for x in data.values() if x.object_type == "Package"}
     # for pkg_id, _package in _packages.items():
     #     # bind the objects

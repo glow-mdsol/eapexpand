@@ -81,9 +81,15 @@ def load_usdm_ct(filename: str):
     # load the values from the values sheet
     _value_sets = wbk["DDF valid value sets"]
     codelists = {}
-    for row in _value_sets.iter_rows(min_row=7, values_only=True):
+
+    # iterate over the rows
+    for idx, row in enumerate(_value_sets.iter_rows(min_row=6, values_only=True)):
+        if idx == 0:
+            has_extensible = "Codelist Extensibility (Yes/No)" in headers
+        else:
+            has_extensible = False
         # get the entity
-        codeset = PermissibleValue.from_row(row)
+        codeset = PermissibleValue.from_row(row, has_extensible)
         if codeset.codelist_c_code not in codelists:
             # create a new codelist
             codelists[codeset.codelist_c_code] = CodeList.from_pvalue(codeset)
@@ -132,7 +138,11 @@ def load_usdm_ct(filename: str):
 
 
 def main_usdm(
-    source_dir_or_file: str, controlled_term: str, output_dir: str, gen: Dict[str, bool]
+    source_dir_or_file: str, 
+    controlled_term: str, 
+    output_dir: str, 
+    api_metadata: dict,
+    gen: Dict[str, bool]
 ):
     NAMESPACE = "https://cdisc.org/usdm"
     if Path(source_dir_or_file).is_file():
@@ -141,7 +151,7 @@ def main_usdm(
         # handle the cases, release_3-5-0 and v3.5.0
         version = Path(source_dir_or_file).stem[:-9]        
         name = "USDM" + "_" + version
-        document = load_from_file(source_dir_or_file, prefix=NAMESPACE, name=name)
+        document = load_from_file(source_dir_or_file, prefix=NAMESPACE, name=name, api_metadata=api_metadata)
     else:
         logger.info(f"Loading from directory {source_dir_or_file}")
         version = Path(source_dir_or_file).name.split("_")[0]

@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union
 from dataclasses_json import dataclass_json, LetterCase, config
 
 
@@ -240,19 +240,19 @@ class Connector:
     Represents a connector in the EAP model
     """
 
-    connector_id: int = field(metadata=config(field_name="Connector_ID"))
-    connector_type: str = field(metadata=config(field_name="Connector_Type"))
-    start_object_id: int = field(metadata=config(field_name="Start_Object_ID"))
-    end_object_id: int = field(metadata=config(field_name="End_Object_ID"))
-    start_edge: int = field(metadata=config(field_name="Start_Edge"))
-    end_edge: int = field(metadata=config(field_name="End_Edge"))
-    seq_no: int
-    head_style: int
-    line_style: int
-    route_style: int
-    is_bold: int
-    line_color: int
-    diagram_id: int = field(metadata=config(field_name="DiagramID"))
+    connector_id: Optional[int] = field(metadata=config(field_name="Connector_ID"), default=None)
+    connector_type: Optional[str] = field(metadata=config(field_name="Connector_Type"), default=None)
+    start_object_id: Optional[int] = field(metadata=config(field_name="Start_Object_ID"), default=None)
+    end_object_id: Optional[int] = field(metadata=config(field_name="End_Object_ID"), default=None)
+    start_edge: Optional[int] = field(metadata=config(field_name="Start_Edge"), default=None)
+    end_edge: Optional[int] = field(metadata=config(field_name="End_Edge"), default=None)
+    seq_no: Optional[int] = None
+    head_style: Optional[int] = None
+    line_style: Optional[int] = None
+    route_style: Optional[int] = None
+    is_bold: Optional[int] = None
+    line_color: Optional[int] = None
+    diagram_id: Optional[int] = field(metadata=config(field_name="DiagramID"), default=None)
     virtual_inheritance: Optional[str] = field(
         metadata=config(field_name="VirtualInheritance"), default=""
     )
@@ -420,6 +420,7 @@ class Attribute:
     )
     ea_guid: Optional[str] = field(metadata=config(field_name="ea_guid"), default=None)
     attribute_classifier: Optional[Object] = None
+    default: Optional[str] = field(metadata=config(field_name="Default"), default=None)
     connector: Optional[Connector] = None
     note: Optional[str] = field(metadata=config(field_name="Note"), default="")
     # Definition if supplied
@@ -434,6 +435,8 @@ class Attribute:
     synonyms: Optional[List[str]] = field(default_factory=list)
     # codelist
     codelist: Optional[Any] = None
+    # api Attributes
+    api_attribute: Optional[str] = field(default=None)
 
     def __lt__(self, other):
         if "pos" in other.__dict__.keys():
@@ -564,7 +567,7 @@ class Object:
         return self.name + " " + str(self.object_id)
 
     @property
-    def property_names(self) -> List[str]:
+    def property_names(self) -> Generator[str]:
         for attr in sorted(self.object_attributes):
             yield attr.name
 

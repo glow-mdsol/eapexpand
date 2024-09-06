@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -53,15 +53,22 @@ def generate_schema_builder(
     _missing_types = []
     # ADD a container
     # sb.add_class(ClassDefinition(name, tree_root=True))
+    message = ClassDefinition(
+        "Message",
+        tree_root=True,
+        description="A USDM message",
+    )
+    sb.add_class(message, slots=[SlotDefinition(name="study", range="Study", required=True), 
+                                 SlotDefinition(name="usdmVersion", range="string", required=True),
+                                 SlotDefinition(name="systemVersion", range="string", required=True),
+                                 SlotDefinition(name="systemName", range="string", required=True) ], 
+                                 use_attributes=True)
     for obj in document.objects:
         if obj.object_type == "Class":
             # holder for extra attrs
             _class = ClassDefinition(
                 obj.name,
             )  # type: ClassDefinition
-            if obj.name == document.root_item:
-                _class.tree_root = True
-            
             if obj.description:
                 _class.description = obj.description
             if obj.reference_url:
@@ -86,14 +93,18 @@ def generate_schema_builder(
             # add the classes as datatypes
             TYPE_MAPPING[obj.name] = obj.name
             _attributes: List[SlotDefinition] = []
-            for attr in obj.all_attributes:  # type: Attribute
+            for attr in obj.all_attributes:
+                if attr.name in ['dictionaries']:
+                    print("Adding dictionaries")
+                attr: Union[Attribute, Connector]
                 # if attr.name == "name":
                 #     print(f"Adding attribute {obj.name}.{attr.name}")
+                # name is protected in schemabuilder
                 if attr.name == "name":
                     # attribute name where "name" gets blitzed
                     _name = obj.name.lower() + attr.name.capitalize()
                     _attr = SlotDefinition(
-                        name=_name, aliases=["name"]
+                        name=_name, aliases=["name"], required=False, multivalued=False
                     )  # eg protocolVersion
                 else:
                     _attr = SlotDefinition(name=attr.name)
@@ -127,6 +138,7 @@ def generate_schema_builder(
                             attr.attribute_type, attr.attribute_type
                         )
                 if isinstance(attr, (Connector,)):
+                    # Connector uses cardinality
                     if attr.multivalued:
                         _attr.multivalued = True
                     else:
@@ -136,10 +148,14 @@ def generate_schema_builder(
                     else:
                         _attr.required = True
                 else:
-                    if attr.lower_bound == 1:
+                    # Attribute uses the lower_bound and upper_bound
+                    if attr.lower_bound == "1":
                         _attr.required = True
-                    if attr.upper_bound == 1:
+                    if attr.upper_bound == "1":
                         _attr.multivalued = False
+                    else:
+                        _attr.multivalued = True
+                    
                 if attr.preferred_term:
                     _attr.title = attr.preferred_term
                 if attr.synonyms:
@@ -164,9 +180,12 @@ def generate_schema_builder(
                             _enum.aliases = _codelist.synonyms
                         # TODO: imported_from
                         _enum.description = _codelist.definition
-                        _enum.definition_uri = "ncit:" + _codelist.concept_c_code
-                        _enum.enum_uri = "ncit:" + _codelist.concept_c_code
-                        _enum.code_set = _codelist.concept_c_code
+                        if ' ' in _codelist.concept_c_code:
+                            logger.warning(f"Concept code contains a space: {_codelist.concept_c_code}")
+                        else:
+                            _enum.definition_uri = "ncit:" + _codelist.concept_c_code
+                            _enum.enum_uri = "ncit:" + _codelist.concept_c_code
+                            _enum.code_set = _codelist.concept_c_code
                         if _codelist.alternate_name:
                             # TODO: add a mapping to the alternate name 
                             pass
@@ -211,7 +230,8 @@ def generate_schema_builder(
     # add the description, not available for builder
     _schema["description"] = document.description
     if document.version:
-        _schema["version"] = document.version
+        # remove the v prefix
+        _schema["version"] = document.version.replace("v", "")
     with open(f"{output_dir}/{name}.yaml", "w") as fh:
         fh.write(yaml.dump(_schema, sort_keys=False))
 
