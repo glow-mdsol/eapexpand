@@ -1,0 +1,42 @@
+class {{ name }}(ConfiguredBaseModel):
+{% if description %}
+    """
+    {{ description }}
+    """
+{% endif %}
+    id: str = Field(
+        ...,
+        title="id",
+        description="""One or more characters used to identify, name, or characterize the nature, properties, or contents of a thing.""",
+    )
+    code: str = Field(
+        ..., title="Code Value", description="""The literal value of a code."""
+    )
+    codeSystem: str = Field(
+        ...,
+        title="Code System Name",
+        description="""The literal identifier (i.e., distinctive designation) of the system used to assign and/or manage codes.""",
+    )
+    codeSystemVersion: str = Field(
+        ...,
+        title="Code System Version",
+        description="""The version of the code system.""",
+    )
+    decode: str = Field(
+        ...,
+        title="Decode",
+        description="""Standardized or dictionary-derived human readable text associated with a code.""",
+    )
+{% if values %}
+
+    def __post_init__(self):
+        """
+        Validates the values entered
+        """
+        pv = {{ "{" }}
+        {% for pv in values.values() %}
+            "{{pv.label}}": "{{pv.value}}"{{ "," if not loop.last else "" }}
+        {% endfor %}
+        {{ "}" }}
+        assert self.code in pv, "Value %s not in set of permissible values".format(self.code)
+{% endif %}
