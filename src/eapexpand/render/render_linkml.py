@@ -121,8 +121,8 @@ def generate_schema_builder(
                 if attr.description:
                     _attr.description = attr.description
                 _attr.multivalued = False
-                if attr.name in IDENTIFIER_TYPES:
-                    _attr.identifier = True
+                # if attr.name in IDENTIFIER_TYPES:
+                #     _attr.identifier = True
                 if attr.attribute_type:
                     # Multivalued attributes are represented as lists
                     if "List" in attr.attribute_type:
