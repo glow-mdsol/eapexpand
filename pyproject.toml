@@ -18,6 +18,7 @@ linkml = "^1.7.4"
 python-dotenv = "^1.0.1"
 oaklib = "^0.6.16"
 inflect = "^7.3.1"
+black = "^24.8.0"
 
 [tool.poetry.scripts]
 expand="eapexpand.cli:main"
