@@ -20,13 +20,35 @@ addedAttributes:
       description: The biomedical concept surrogates used in the study design.
       type: BiomedicalConceptSurrogate
       multivalued: true
+  StudyVersion:
+    - name: organizations
+      description: The Organisations involved with a version.
+      type: Organization
+      multivalued: true
+    - name: roles
+      description: The StudyRoles involved with a version.
+      type: StudyRole
+      multivalued: true
+    - name: administrableProducts
+      description: The AdministrableProducts involved with a version.
+      type: AdministrableProduct
+      multivalued: true
+    - name: narrativeContentItems
+      description: The NarrativeContentItems involved with a version.
+      type: NarrativeContentItem
+      multivalued: true
+    - name: criteria
+      description: The Eligibility Criteria for a study.
+      type: EligibilityCriterion
+      multivalued: true
 apiAttributes:
   bcSurrogates:
     name: bcSurrogateIds
   bcCategories:
     name: bcCategoryIds
   appliesTo:
-    name: appliesToIds
+    name: appliesToId
+    names: appliesToIds
   context:
     name: contextIds
   members:
@@ -81,3 +103,16 @@ apiAttributes:
     name: criterionIds
   scheduledAt:
     name: scheduledAtId
+  scope:
+    name: scopeId
+  encounter:
+    name: encounterId
+  administrableProduct:
+    name: administrableProductId  
+  documentVersion:
+    name: documentVersionId
+  organizations:
+    name: organizationIds
+mapTypes:
+  blindingSchema:
+    type: AliasCode
