@@ -330,7 +330,17 @@ class Connector:
     synonyms: Optional[List[str]] = field(default_factory=list)
     # codelist
     codelist: Optional[Any] = field(default=None)
+    # aliased type
+    aliased_type: Optional[str] = field(default=None)
 
+    @property
+    def target_object_name(self):
+        return self.target_object.name if self.target_object else ""
+    
+    @property
+    def source_object_name(self):
+        return self.target_object.name if self.target_object else ""
+    
     @property
     def id(self):
         return self.connector_id
@@ -349,6 +359,13 @@ class Connector:
     def optional(self) -> Optional[bool]:
         return self.dest_card.startswith("0")
 
+    @optional.setter
+    def optional(self, value: bool):
+        if value:
+            self.dest_card = "0" + self.dest_card[1:]
+        else:
+            self.dest_card = "1" + self.dest_card[1:]
+
     @property
     def multivalued(self) -> Optional[bool]:
         return self.dest_card.endswith("*")
@@ -359,7 +376,7 @@ class Connector:
 
     @property
     def attribute_type(self):
-        return self.target_object.name
+        return self.aliased_type if self.aliased_type else self.target_object.name
 
     @property
     def cardinality(self):
