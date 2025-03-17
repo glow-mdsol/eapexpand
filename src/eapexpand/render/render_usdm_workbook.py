@@ -6,6 +6,10 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.cell.cell import Cell
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 HEADERS = [
     "Class",
@@ -86,7 +90,10 @@ def generate(
         for obj in pobjects:  # type: Object
             _output = {}
             if obj.object_type == "Class":
-                _ref = ct_content.get(obj.name)  # type: Entity
+                _ref = ct_content.get(obj.name)
+                if _ref is None:
+                    logger.warning(f"Unable to find {obj.name} in CT")
+                    continue  # type: Entity
                 if obj.generalizations:
                     _generalization = document.get_object(
                         obj.generalizations[0].end_object_id
@@ -119,7 +126,8 @@ def generate(
                     write_cell(sheet, row=row_num, column=5, value=str(obj.note))
                 row_num += 1
                 # includes object attributes and connections
-                for _attribute in obj.attributes:  # type: Attribute
+                for _attribute in obj.attributes:
+                    _attribute: Attribute
                     attrib = _output.setdefault(_attribute.name, {})
                     if not attrib:
                         if (
@@ -157,6 +165,7 @@ def generate(
                     # print(
                     #     "Adding connection ", outgoing_connection.name, " to ", obj.name
                     # )
+                    outgoing_connection: Connector
                     attrib = dict(
                         attribute_name=outgoing_connection.name,
                         attribute_type=document.get_object(
