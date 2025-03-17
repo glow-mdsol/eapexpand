@@ -55,14 +55,104 @@ def generate_schema_builder(
     # sb.add_class(ClassDefinition(name, tree_root=True))
     message = ClassDefinition(
         "Message",
-        tree_root=True,
         description="A USDM message",
     )
-    sb.add_class(message, slots=[SlotDefinition(name="study", range="Study", required=True), 
-                                 SlotDefinition(name="usdmVersion", range="string", required=True),
-                                 SlotDefinition(name="systemVersion", range="string", required=True),
-                                 SlotDefinition(name="systemName", range="string", required=True) ], 
-                                 use_attributes=True)
+    sb.add_class(
+        message,
+        slots=[
+            SlotDefinition(name="study", range="Study", required=True),
+            SlotDefinition(name="usdmVersion", range="string", required=True),
+            SlotDefinition(name="systemVersion", range="string", required=True),
+            SlotDefinition(name="systemName", range="string", required=True),
+        ],
+        use_attributes=True,
+    )
+    # need this for the AliasCode
+    code = ClassDefinition("Code", description="A USDM Code Reference")
+    sb.add_class(
+        code,
+        slots=[
+            SlotDefinition(
+                name="id",
+                range="string",
+                required=False,
+                description="One or more characters used to identify, name, or characterize the nature, properties, or contents of a thing.",
+            ),
+            SlotDefinition(
+                name="code",
+                range="string",
+                required=True,
+                description="The literal value of a code.",
+            ),
+            SlotDefinition(
+                name="codeSystem",
+                range="string",
+                required=True,
+                description="The literal identifier (i.e., distinctive designation) of the system used to assign and/or manage codes.",
+            ),
+            SlotDefinition(
+                name="codeSystemVersion",
+                range="string",
+                required=True,
+                description="The version of the code system.",
+            ),
+            SlotDefinition(
+                name="decode",
+                range="string",
+                required=True,
+                description="Standardized or dictionary-derived human readable text associated with a code.",
+            ),
+        ],
+        use_attributes=True,
+    )
+    alias_code = ClassDefinition(
+        "AliasCode", description="An alias for a USDM Code", abstract=True
+    )
+    sb.add_class(
+        alias_code,
+        slots=[
+            SlotDefinition(
+                name="id",
+                range="string",
+                required=False,
+                description="One or more characters used to identify, name, or characterize the nature, properties, or contents of a thing.",
+            ),
+            SlotDefinition(
+                name="standardCodeAliases",
+                range="Code",
+                multivalued=True,
+                description="Other terms by which the standard code is known",
+            ),
+        ],
+        use_attributes=True,
+    )
+    rule = ClassDefinition("Rule", description="A USDM CDISC Core rule")
+    """
+    self.core_id: str = record_params["core_id"]
+    self.reference: List[dict] = record_params["reference"]
+    self.sensitivity: Sensitivity = record_params["sensitivity"]
+    self.executability: str = record_params["executability"]
+    self.category: str = record_params["category"]
+    self.author: str = record_params["author"]
+    self.description: str = record_params["description"]
+    self.authority: dict = record_params["authority"]
+    self.standards: dict = record_params["standards"]
+    self.classes: dict = record_params.get("classes")
+    self.domains: dict = record_params.get("domains")
+    self.datasets: dict = record_params.get("datasets")
+    self.rule_type: RuleTypes = record_params["rule_type"]
+    self.operations: List[dict] = record_params.get("operations")
+    self.conditions: dict = record_params["conditions"]
+    self.actions: dict = record_params["actions"]
+    self.output_variables: dict = record_params.get("output_variables")
+    """
+    sb.add_class(
+        rule,
+        slots=[
+            SlotDefinition(name="text", range="string", required=True),
+        ],
+    )
+
     for obj in document.objects:
         if obj.object_type == "Class":
             # holder for extra attrs
@@ -94,7 +184,7 @@ def generate_schema_builder(
             TYPE_MAPPING[obj.name] = obj.name
             _attributes: List[SlotDefinition] = []
             for attr in obj.all_attributes:
-                if attr.name in ['dictionaries']:
+                if attr.name in ["dictionaries"]:
                     print("Adding dictionaries")
                 attr: Union[Attribute, Connector]
                 # if attr.name == "name":
@@ -134,9 +224,15 @@ def generate_schema_builder(
                     else:
                         if attr.attribute_type not in TYPE_MAPPING:
                             _missing_types.append(attr.attribute_type)
-                        _attr.range = TYPE_MAPPING.get(
-                            attr.attribute_type, attr.attribute_type
-                        )
+                        # TODO: parameterise this, at the moment it overreaches
+                        if attr.attribute_type in ["ScheduledInstance", "ScheduledDecisionInstance", "ScheduledActivityInstance"]:
+                            _attr.any_of = [{"range": x} for x in ["ScheduledInstance", "ScheduledDecisionInstance", "ScheduledActivityInstance"]] 
+                        elif attr.attribute_type in ["StudySite" "StudyCohort"]:
+                            _attr.any_of = [{"range": x} for x in ["StudySite", "StudyCohort", "GeographicScope"]] 
+                        else:
+                            _attr.range = TYPE_MAPPING.get(
+                                attr.attribute_type, attr.attribute_type
+                            )
                 if isinstance(attr, (Connector,)):
                     # Connector uses cardinality
                     if attr.multivalued:
@@ -155,12 +251,15 @@ def generate_schema_builder(
                         _attr.multivalued = False
                     else:
                         _attr.multivalued = True
-                    
+                if attr.name == "plannedSex":
+                    logger.warning("Mapping plannedSex to List")
+                    _attr.multivalued = True
                 if attr.preferred_term:
                     _attr.title = attr.preferred_term
                 if attr.synonyms:
                     _attr.aliases = attr.synonyms
                 if attr.codelist:
+                    # are there code values for this attribute?
                     _codelist = attr.codelist  # type: CodeList
                     if _codelist.preferred_term:
                         _codelist_name = "".join(_codelist.preferred_term.split())
@@ -168,9 +267,7 @@ def generate_schema_builder(
                         _codelist_name = f"{_codelist.entity_name}{_codelist.attribute_name.capitalize()}"
                     # if the item is enumerated
                     if _codelist_name not in sb.schema.enums:
-                        _enum = EnumDefinition(
-                            name=_codelist_name
-                        )
+                        _enum = EnumDefinition(name=_codelist_name)
                         _enum.name = _codelist_name
                         if _codelist.preferred_term:
                             _enum.title = _codelist.preferred_term
@@ -180,18 +277,21 @@ def generate_schema_builder(
                             _enum.aliases = _codelist.synonyms
                         # TODO: imported_from
                         _enum.description = _codelist.definition
-                        if ' ' in _codelist.concept_c_code:
-                            logger.warning(f"Concept code contains a space: {_codelist.concept_c_code}")
+                        if " " in _codelist.concept_c_code:
+                            logger.warning(
+                                f"Concept code contains a space: {_codelist.concept_c_code}"
+                            )
                         else:
                             _enum.definition_uri = "ncit:" + _codelist.concept_c_code
                             _enum.enum_uri = "ncit:" + _codelist.concept_c_code
                             _enum.code_set = _codelist.concept_c_code
                         if _codelist.alternate_name:
-                            # TODO: add a mapping to the alternate name 
+                            # TODO: add a mapping to the alternate name
                             pass
                         for pv in _codelist.items:
-                            _pv = PermissibleValue(pv.concept_c_code)
+                            _pv = PermissibleValue(text=str(pv.preferred_term))
                             _pv.meaning = "ncit:" + pv.concept_c_code
+                            _pv.name = pv.concept_c_code
                             if pv.preferred_term:
                                 _pv.title = pv.preferred_term
                                 _pv.text = pv.preferred_term
@@ -201,7 +301,33 @@ def generate_schema_builder(
                                 _pv.description = pv.definition
                             _enum.permissible_values[_pv.text] = _pv
                         sb.add_enum(_enum)
-                    _attr.range = _codelist_name
+                    if attr.attribute_type == "AliasCode":
+                        logger.info(f"Adding AliasCode for {_codelist_name}")
+                        # need to create an AliasCode
+                        # attributes:
+                        # id: string
+                        # standard_code: Code
+                        # standard_code_aliases: List[Code]
+                        _cd = ClassDefinition(
+                            f"{_codelist_name}AliasCode", is_a="AliasCode"
+                        )
+                        _cd.description = f"An alias for a {_codelist_name} code"
+                        sb.add_class(
+                            _cd,
+                            slots=[
+                                SlotDefinition(
+                                    name="standardCode",
+                                    range=f"{_codelist_name}",
+                                    required=True,
+                                    description="The standard code",
+                                ),
+                            ],
+                            use_attributes=True,
+                        )
+                        _attr.range = f"{_codelist_name}AliasCode"
+                    else:
+                        logger.info(f"Adding Code for {_codelist_name}")
+                        _attr.range = _codelist_name
                 _attributes.append(_attr)
                 # if _attr.name == "name":
                 #     print("Adding name attribute")
