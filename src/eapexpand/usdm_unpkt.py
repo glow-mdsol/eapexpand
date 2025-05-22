@@ -219,7 +219,7 @@ def main_usdm(
     #         if attr.definition:
     #             definitions[attr.logical_data_model_name] = attr.definition
     for aspect, genflag in gen.items():
-        print("Checking generation of ", aspect, "as", genflag)
+        logger.info(f"Checking generation of {aspect} as {genflag}")
         if genflag:
             if aspect == "prisma":
                 from .render.render_prisma import generate as generate_prisma
