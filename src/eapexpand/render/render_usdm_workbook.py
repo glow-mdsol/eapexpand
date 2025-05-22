@@ -35,6 +35,10 @@ def generate(
     """
     Generates the Excel Representation of the model
     :param name: The name of the model - guides what the output file is called
+    :param document: The loaded document
+    :param ct_content: The loaded controlled terms
+    :param codelists: The loaded codelists
+    :param output_dir: The output directory
     """
     print("Generating USDM Excel file")
     packages = {x.package_id: x for x in document.objects if x.object_type == "Package"}
@@ -87,13 +91,15 @@ def generate(
             write_cell(sheet, 1, idx + 1, column, header=True)
         row_num = 2
 
-        for obj in pobjects:  # type: Object
+        for obj in pobjects:
+            obj: Object
             _output = {}
             if obj.object_type == "Class":
                 _ref = ct_content.get(obj.name)
                 if _ref is None:
                     logger.warning(f"Unable to find {obj.name} in CT")
                     continue  # type: Entity
+                # super classes
                 if obj.generalizations:
                     _generalization = document.get_object(
                         obj.generalizations[0].end_object_id
@@ -143,23 +149,27 @@ def generate(
                             attribute_cardinality=_attribute.cardinality,
                             attribute_note=_attribute.description,
                         )
-                        _attr_ref = _ref.get_attribute(_attribute.name)
-                        if _attr_ref:
-                            attrib["definition"] = _attr_ref.definition
-                            attrib["c_code"] = _attr_ref.nci_c_code
-                            attrib["pref_term"] = _attr_ref.preferred_term
-                            if _attr_ref.has_value_list:
-                                if _attr_ref.external_code_list:
-                                    attrib[
-                                        "external_value_list"
-                                    ] = _attr_ref.external_code_list
-                                elif _attr_ref.codelist_code:
-                                    attrib["codelist"] = _attr_ref.codelist_code
+                        if _ref:
+                            _attr_ref = _ref.get_attribute(_attribute.name)
+                            if _attr_ref:
+                                attrib["definition"] = _attr_ref.definition
+                                attrib["c_code"] = _attr_ref.nci_c_code
+                                attrib["pref_term"] = _attr_ref.preferred_term
+                                if _attr_ref.has_value_list:
+                                    if _attr_ref.external_code_list:
+                                        attrib[
+                                            "external_value_list"
+                                        ] = _attr_ref.external_code_list
+                                    elif _attr_ref.codelist_code:
+                                        attrib["codelist"] = _attr_ref.codelist_code
+                            else:
+                                missing = (_ref.entity_name, _attribute.name)
+                                if missing not in missing_references.get("attributes"):
+                                    missing_references["attributes"].append(missing)
                         else:
-                            missing = (_ref.entity_name, _attribute.name)
+                            missing = (obj.name, _attribute.name)
                             if missing not in missing_references.get("attributes"):
                                 missing_references["attributes"].append(missing)
-
                     _output[_attribute.name] = attrib
                 for outgoing_connection in obj.outgoing_connections:  # type: Connector
                     # print(
