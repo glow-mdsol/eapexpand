@@ -71,9 +71,9 @@ def load_usdm():
     source_version = opts.version
     gen=dict(linkml=True)
     output_dir = opts.output
-    usdm_ct = Path.cwd() / "input" / f"{source_version}_USDM_CT.xlsx"
+    usdm_ct = Path.cwd() / "input" / source_version / f"{source_version}_USDM_CT.xlsx"
     assert usdm_ct.is_file(), "USDM Controlled Terms file not found"
-    source = Path.cwd() / "input" / f"{source_version}_USDM_UML.qea"
+    source = Path.cwd() / "input" / source_version / f"{source_version}_USDM_UML.qea"
     assert source.is_file(), "USDM file not found"
     api_metadata_file = Path.cwd() / "docs" / "api_attributes.yaml" 
     if api_metadata_file.is_file():
