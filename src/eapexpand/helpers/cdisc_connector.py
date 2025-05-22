@@ -14,9 +14,24 @@ from eapexpand.models.usdm_ct import CodeList, PermissibleValue
 
 class CDISCCTConnector:
     """
-    Handle the connection to the CDISC CT API
-    """
+    A connector class for interacting with the CDISC Library API to retrieve controlled terminology (CT) packages 
+    and codelists.
 
+    Attributes:
+        api_key (str): The API key used for authenticating with the CDISC Library API.
+        client (requests.Session): A session object for making HTTP requests with the API key pre-configured.
+        _base_url (str): The base URL for the CDISC Library API.
+        _packages (dict): A cache for storing the newest package URLs for different vocabularies.
+        _cache (dict): A cache for storing retrieved codelists.
+
+    Methods:
+        get_newest_package(vocabulary="sdtmct"):
+            Retrieves the newest package URL for a given vocabulary from the CDISC Library API.
+
+        retrieve_valueset(codelist_code: str) -> Optional[CodeList]:
+            Retrieves a codelist from the CDISC Library API and converts it into a `CodeList` object.
+            If the codelist is already cached, it retrieves it from the cache.
+    """
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.client = requests.Session()
