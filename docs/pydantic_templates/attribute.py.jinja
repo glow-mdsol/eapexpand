@@ -1,4 +1,3 @@
-{# linkml has name as a internal attribute which we work around #}
 {%- if name.endswith('Name') and not name in ['systemName', 'templateName'] %}
 name: {{ range }} = Field(default={{ field }}
 {%- else -%}
