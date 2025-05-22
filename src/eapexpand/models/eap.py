@@ -50,6 +50,9 @@ def decode_flag(flag: int) -> bool:
 
 
 class Diagram:
+    """
+    Some discussion about subsetting the document into diagrams
+    """
     def __init__(self, idee: int, name: str, diagram_type: str, version: str):
         self.id = idee
         self.name = name
@@ -62,6 +65,42 @@ class Diagram:
 
 
 class Document:
+    """
+    The `Document` class represents a structured document containing various elements 
+    such as packages, objects, diagrams, and metadata. It provides methods and properties 
+    to access, manipulate, and query these elements.
+    Attributes:
+        name (str): The name of the document.
+        prefix (str): The prefix associated with the document.
+        packages (List[Package]): A list of package objects in the document.
+        objects (List[Object]): A list of objects in the document.
+        diagrams (List[Diagram]): A list of diagrams in the document.
+    Properties:
+        version (Optional[str]): The version of the document.
+        prefixes (Dict[str, str]): A dictionary of prefixes and their associated URIs.
+        description (Optional[str]): A description of the document.
+        root_item (Optional[str]): The root item of the document.
+        prefix (str): The prefix associated with the document.
+        diagrams (List[Diagram]): A list of diagrams in the document.
+        packages (List[Object]): A list of package objects in the document.
+        objects (List[Object]): A sorted list of objects in the document.
+        attributes (List[Attribute]): A list of attributes in the document.
+        connectors (List[Connector]): A list of connectors in the document.
+        classes (List[Object]): A list of class objects in the document.
+        states (List[Object]): A list of state objects in the document.
+        state_nodes (List[Object]): A list of state nodes in the document.
+        used_types (List[str]): A list of unique types used in the document.
+    Methods:
+        add_prefix(prefix: str, uri: str) -> None:
+            Adds a prefix and its associated URI to the document.
+        get_object(object_id: int) -> Optional[Object]:
+            Retrieves an object by its ID.
+        get_class_by_name(name: str) -> Optional[Class]:
+            Retrieves a class object by its name.
+        merge_definitions(definitions: Dict[str, str]) -> None:
+            Merges the provided definitions into the document, updating objects, 
+            attributes, and connectors with matching names.
+    """
     def __init__(
         self,
         name: str,
@@ -206,6 +245,24 @@ class Document:
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
 class DataType:
+    """
+    DataType class represents the structure and metadata of a data type.
+
+    Attributes:
+        id (int): The unique identifier for the data type, mapped to "DatatypeID".
+        datatype_type (str): The type of the data type, mapped to "Type".
+        size (Optional[int]): The size of the data type, mapped to "Size". Defaults to None.
+        max_prec (Optional[int]): The maximum precision of the data type, mapped to "MaxPrec". Defaults to None.
+        max_scale (Optional[int]): The maximum scale of the data type, mapped to "MaxScale". Defaults to None.
+        default_len (Optional[int]): The default length of the data type, mapped to "DefaultLen". Defaults to None.
+        default_prec (Optional[int]): The default precision of the data type, mapped to "DefaultPrec". Defaults to None.
+        default_scale (Optional[int]): The default scale of the data type, mapped to "DefaultScale". Defaults to None.
+        user (Optional[int]): The user associated with the data type, mapped to "User". Defaults to None.
+        generic_type (Optional[str]): The generic type of the data type, mapped to "GenericType". Defaults to an empty string.
+        product_name (Optional[str]): The product name associated with the data type, mapped to "Product_Name". Defaults to an empty string.
+        datatype (Optional[str]): The name of the data type, mapped to "Datatype". Defaults to an empty string.
+        max_len (Optional[int]): The maximum length of the data type, mapped to "MaxLen". Defaults to None.
+    """
     id: int = field(metadata=config(field_name="DatatypeID"))
     datatype_type: str = field(metadata=config(field_name="Type"))
     size: Optional[int] = field(metadata=config(field_name="Size"), default=None)
@@ -237,9 +294,82 @@ class DataType:
 @dataclass
 class Connector:
     """
-    Represents a connector in the EAP model
-    """
+    Connector class represents a model for a connector object with various attributes 
+    and properties to define its characteristics and relationships.
 
+    Attributes:
+        connector_id (Optional[int]): Unique identifier for the connector.
+        connector_type (Optional[str]): Type of the connector.
+        start_object_id (Optional[int]): ID of the starting object.
+        end_object_id (Optional[int]): ID of the ending object.
+        start_edge (Optional[int]): Starting edge of the connector.
+        end_edge (Optional[int]): Ending edge of the connector.
+        seq_no (Optional[int]): Sequence number of the connector.
+        head_style (Optional[int]): Style of the head of the connector.
+        line_style (Optional[int]): Style of the line of the connector.
+        route_style (Optional[int]): Routing style of the connector.
+        is_bold (Optional[int]): Indicates if the connector is bold.
+        line_color (Optional[int]): Color of the connector line.
+        diagram_id (Optional[int]): ID of the diagram associated with the connector.
+        virtual_inheritance (Optional[str]): Virtual inheritance information.
+        ea_guid (Optional[str]): GUID of the connector.
+        is_root (Optional[bool]): Indicates if the connector is a root.
+        is_leaf (Optional[bool]): Indicates if the connector is a leaf.
+        is_spec (Optional[bool]): Indicates if the connector is a specification.
+        is_signal (Optional[bool]): Indicates if the connector is a signal.
+        is_stimulus (Optional[bool]): Indicates if the connector is a stimulus.
+        name (Optional[str]): Name of the connector.
+        dest_card (Optional[str]): Destination cardinality.
+        source_card (Optional[str]): Source cardinality.
+        direction (Optional[str]): Direction of the connector.
+        source_access (Optional[str]): Source access information.
+        dest_access (Optional[str]): Destination access information.
+        dest_element (Optional[str]): Destination element information.
+        source_containment (Optional[str]): Source containment information.
+        source_is_aggregate (Optional[int]): Indicates if the source is aggregate.
+        source_is_ordered (Optional[int]): Indicates if the source is ordered.
+        source_role (Optional[str]): Role of the source.
+        dest_role (Optional[str]): Role of the destination.
+        dest_containment (Optional[str]): Destination containment information.
+        dest_is_aggregate (Optional[int]): Indicates if the destination is aggregate.
+        dest_is_ordered (Optional[int]): Indicates if the destination is ordered.
+        top_end_label (Optional[str]): Label for the top end of the connector.
+        source_changeable (Optional[str]): Indicates if the source is changeable.
+        dest_changeable (Optional[str]): Indicates if the destination is changeable.
+        source_ts (Optional[str]): Timestamp for the source.
+        dest_ts (Optional[str]): Timestamp for the destination.
+        target2 (Optional[int]): Secondary target information.
+        source_style (Optional[str]): Style of the source.
+        dest_style (Optional[str]): Style of the destination.
+        source_is_navigable (Optional[int]): Indicates if the source is navigable.
+        dest_is_navigable (Optional[int]): Indicates if the destination is navigable.
+        package_data_1 (Optional[str]): Package data field 1.
+        package_data_2 (Optional[str]): Package data field 2.
+        package_data_3 (Optional[str]): Package data field 3.
+        package_data_4 (Optional[str]): Package data field 4.
+        package_data_5 (Optional[str]): Package data field 5.
+        source_object (Optional[Object]): Source object associated with the connector.
+        target_object (Optional[Object]): Target object associated with the connector.
+        definition (Optional[str]): Definition of the connector.
+        enumeration (Optional[Enumeration]): Enumerated value associated with the connector.
+        reference_url (Optional[str]): Reference URL (e.g., NCI code/URL).
+        preferred_term (Optional[str]): Preferred term for the connector.
+        synonyms (Optional[List[str]]): List of synonyms for the connector.
+        codelist (Optional[Any]): Codelist associated with the connector.
+        aliased_type (Optional[str]): Aliased type of the connector.
+    Properties:
+        target_object_name (str): Name of the target object, if available.
+        source_object_name (str): Name of the source object, if available.
+        id (Optional[int]): Returns the connector ID.
+        attributes (List[Attribute]): Attributes of the target object, if available.
+        optional (Optional[bool]): Indicates if the destination cardinality starts with "0".
+        multivalued (Optional[bool]): Indicates if the destination cardinality ends with "*".
+        description (Optional[str]): Returns the definition of the connector.
+        attribute_type (Optional[str]): Returns the aliased type or the name of the target object.
+        cardinality (Optional[str]): Returns the destination cardinality.
+    Methods:
+        optional.setter: Sets the optional property by modifying the destination cardinality.
+    """
     connector_id: Optional[int] = field(metadata=config(field_name="Connector_ID"), default=None)
     connector_type: Optional[str] = field(metadata=config(field_name="Connector_Type"), default=None)
     start_object_id: Optional[int] = field(metadata=config(field_name="Start_Object_ID"), default=None)
@@ -382,14 +512,56 @@ class Connector:
     def cardinality(self):
         return self.dest_card
 
-
+    @property
+    def range(self):
+        if self.target_object:
+            return self.target_object.name
+        else:
+            return None
+        
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
 class Attribute:
     """
-    Represents an attribute of an object in the EAP model
-    """
+    The `Attribute` class represents an attribute of an object in the EAP (Enterprise Architect Project) model.
 
+    Attributes:
+        object_id (Optional[int]): The unique identifier of the object.
+        name (Optional[str]): The name of the attribute.
+        scope (Optional[str]): The scope of the attribute.
+        containment (Optional[str]): The containment type of the attribute.
+        is_static (Optional[bool]): Indicates if the attribute is static.
+        is_collection (Optional[bool]): Indicates if the attribute is a collection.
+        is_ordered (Optional[bool]): Indicates if the attribute is ordered.
+        allow_duplicates (Optional[bool]): Indicates if duplicates are allowed.
+        lower_bound (Optional[str]): The lower bound of the attribute's cardinality.
+        upper_bound (Optional[str]): The upper bound of the attribute's cardinality.
+        derived (Optional[bool]): Indicates if the attribute is derived.
+        id (Optional[int]): The unique identifier of the attribute.
+        pos (Optional[int]): The position of the attribute.
+        length (Optional[int]): The length of the attribute.
+        const (Optional[bool]): Indicates if the attribute is constant.
+        attribute_type (Optional[str]): The type of the attribute.
+        classifier_id (Optional[int]): The identifier of the classifier associated with the attribute.
+        attribute_stereotype (Optional[str]): The stereotype of the attribute.
+        ea_guid (Optional[str]): The globally unique identifier (GUID) of the attribute in EA.
+        attribute_classifier (Optional[Object]): The classifier object associated with the attribute.
+        default (Optional[str]): The default value of the attribute.
+        connector (Optional[Connector]): The connector associated with the attribute.
+        note (Optional[str]): Additional notes or comments about the attribute.
+        definition (Optional[str]): The definition of the attribute, if supplied.
+        enumeration (Optional[Enumeration]): The enumerated value associated with the attribute.
+        reference_url (Optional[str]): A reference URL, e.g., NCI code/URL.
+        preferred_term (Optional[str]): The preferred term for the attribute.
+        synonyms (Optional[List[str]]): A list of synonyms for the attribute.
+        codelist (Optional[Any]): A codelist associated with the attribute.
+        api_attribute (Optional[str]): API-specific attributes.
+
+    Methods:
+        __lt__(self, other): Compares the position (`pos`) of this attribute with another attribute.
+        cardinality (property): Returns the cardinality of the attribute, defaulting to "1..1" if not specified.
+        description (property): Returns a description of the attribute, prioritizing `definition` over `note`.
+    """
     object_id: Optional[int] = field(
         metadata=config(field_name="Object_ID"), default=None
     )
@@ -465,6 +637,9 @@ class Attribute:
         if self.connector:
             #
             return self.connector.dest_card if self.connector.dest_card else "1..1"
+        elif self.lower_bound and self.upper_bound:
+            # attribute cardinality
+            return f"{self.lower_bound}..{self.upper_bound}"
         return "1..1"
 
     @property
@@ -476,29 +651,21 @@ class Attribute:
         else:
             return ""
 
-
-# @dataclass
-# class ConnectorAttribute(Attribute):
-#     dest_card: Optional[str] = None
-#     @classmethod
-#     def from_connector(cls, connector: Connector):
-#         _attr = cls()
-#         _attr.name = connector.name
-#         _attr.attribute_type = connector.target_object.name
-#         # this provides the cardinality
-#         _attr.connector = connector
-#         _attr.pos = connector.start_object_id + connector.end_object_id
-#         _attr.preferred_term = connector
-#         return _attr
-
+    @property
+    def range(self) -> str:
+        """
+        Getting the range of the attribute
+        """
+        if self.attribute_type:
+            return self.attribute_type
+        else:
+            return ""
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
 class Object:
     """
-    Represents an object in the EAP model
     """
-
     object_id: int = field(metadata=config(field_name="Object_ID"), default=None)
     object_type: str = field(metadata=config(field_name="Object_Type"), default="")
     diagram_id: int = field(metadata=config(field_name="Diagram_ID"), default=None)
@@ -601,6 +768,39 @@ class Object:
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
 class Package(Object):
+    """
+    Package class represents a data model for handling package-related information.
+
+    Attributes:
+        package_id (Optional[int]): Unique identifier for the package.
+        package_name (Optional[str]): Name of the package.
+        parent_id (Optional[int]): Identifier of the parent package.
+        created_date (Optional[datetime]): Date when the package was created.
+        modified_date (Optional[datetime]): Date when the package was last modified.
+        is_controlled (Optional[bool]): Indicates if the package is controlled.
+        protected (Optional[bool]): Indicates if the package is protected.
+        use_dtd (Optional[bool]): Indicates if DTD is used.
+        log_xml (Optional[bool]): Indicates if XML logging is enabled.
+        batch_save (Optional[bool]): Indicates if batch saving is enabled.
+        batch_load (Optional[bool]): Indicates if batch loading is enabled.
+        version (Optional[str]): Version of the package.
+        last_save_date (Optional[datetime]): Date when the package was last saved.
+        last_load_date (Optional[datetime]): Date when the package was last loaded.
+        package_flags (Optional[str]): Flags associated with the package.
+        objects (List[Object]): List of objects associated with the package.
+        parent (Optional[Package]): Parent package instance.
+        diagram_id (Optional[int]): Identifier for the associated diagram.
+
+    Methods:
+        merge(data: Package):
+            Merges the data from another Package instance into the current instance.
+
+        id:
+            Returns the unique identifier of the package.
+
+        path:
+            Returns the hierarchical path of the package, including its parent package if applicable.
+    """
     package_id: Optional[int] = field(
         metadata=config(field_name="Package_ID"), default=None
     )
@@ -721,7 +921,6 @@ class EnumeratedValue:
     """
     Represents an element in the EnumeratedValue Set
     """
-
     label: str
     "Concept Code"
     code: str
@@ -736,9 +935,35 @@ class EnumeratedValue:
 @dataclass
 class Enumeration(Object):
     """
-    These represent extensions for the USDM Use case
-    """
+    Enumeration class represents extensions for the USDM (Unified Study Data Model) use case.
 
+    Attributes:
+        name (Optional[str]): The name of the enumeration.
+        code (Optional[str]): The code associated with the enumeration.
+        datatype (Optional[str]): The datatype of the enumeration.
+        url (Optional[str]): The URL associated with the enumeration.
+        submission_value (Optional[str]): The value submitted for the enumeration.
+        synonyms (Optional[List[str]]): A list of synonyms for the enumeration.
+        definition (Optional[str]): The definition of the enumeration.
+        values (List[EnumeratedValue]): A list of enumerated values associated with the enumeration.
+        labels (List[str]): A list of labels associated with the enumeration.
+
+    Methods:
+        add_value(value: EnumeratedValue):
+            Adds an enumerated value to the `values` list.
+
+        add_synonym(value: str):
+            Adds a synonym to the `synonyms` list if it is not already present.
+
+        add_definition(value: str):
+            Sets the definition of the enumeration.
+
+        prefixed_url -> str:
+            Returns the URL if it exists; otherwise, returns a prefixed string using the code.
+
+        enumerated_values -> Generator[str]:
+            A generator that yields the names of object attributes.
+    """
     name: Optional[str] = None
     code: Optional[str] = None
     datatype: Optional[str] = None
@@ -766,7 +991,7 @@ class Enumeration(Object):
             return f"ncit:{self.code}"
 
     @property
-    def enumerated_values(self) -> List[str]:
+    def enumerated_values(self) -> Generator[str]:
         for attr in self.object_attributes:
             yield attr.name
 
@@ -815,3 +1040,19 @@ class ObjectProperty:
     property_name: str = field(metadata=config(field_name="Property"))
     ea_guid: str = field(metadata=config(field_name="ea_guid"))
     property_value: str = field(metadata=config(field_name="Value"), default="")
+
+
+# @dataclass
+# class ConnectorAttribute(Attribute):
+#     dest_card: Optional[str] = None
+#     @classmethod
+#     def from_connector(cls, connector: Connector):
+#         _attr = cls()
+#         _attr.name = connector.name
+#         _attr.attribute_type = connector.target_object.name
+#         # this provides the cardinality
+#         _attr.connector = connector
+#         _attr.pos = connector.start_object_id + connector.end_object_id
+#         _attr.preferred_term = connector
+#         return _attr
+
