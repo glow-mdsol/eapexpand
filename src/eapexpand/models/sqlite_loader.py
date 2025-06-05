@@ -135,14 +135,23 @@ def load_from_file(
         if not _source_object:
             logger.info(f"Skipping {_conn.connector_id} ({_conn.name}): Source object not found: {_conn.start_object_id}")
             continue
+        # end
         _target_object = data.get(_conn.end_object_id)
         assert _target_object, f"Connector {_conn.connector_id}: Target object not found: {_conn._target_object_id}"
         if api_metadata:
             if api_metadata.get("apiAttributes", {}).get(_conn.name):
                 _api_attr_spec = api_metadata["apiAttributes"][_conn.name]
+                
+                if "names" in _api_attr_spec:
+                    if _conn.multivalued:
+                        _name = _api_attr_spec["names"]
+                    else:
+                        _name = _api_attr_spec["name"]
+                else:
+                    _name = _api_attr_spec["name"]
                 # add an API attribute
                 _api_attr = Attribute(
-                    name=_api_attr_spec["name"],
+                    name=_name,
                     attribute_type="String",
                     preferred_term="API Attribute for " + _conn.name,
                     definition="An API attribute added for " + _conn.name,
@@ -150,9 +159,13 @@ def load_from_file(
                     upper_bound='*' if _conn.multivalued else '1',
                     pos=_attr.pos + 1000,
                 )
+                _conn.optional = True
                 # print("Adding API attribute", _api_attr.name, "for", _conn.name, "with cardinality", _conn.dest_card)
                 _source_object.object_attributes.append(_api_attr)
-
+            elif api_metadata.get("mapTypes"):
+                if _conn.name in api_metadata["mapTypes"]:
+                    _conn.aliased_type = api_metadata["mapTypes"][_conn.name]["type"]
+                                  
         if _source_object and _target_object:
             if _conn.connector_type == "Association":
                 _source_object.outgoing_connections.append(_conn)

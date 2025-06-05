@@ -1,4 +1,4 @@
-{%- if name.endswith('Name') and not name in ['systemName', 'templateName'] %}
+{%- if name.endswith('Name') and not name in ['systemName', 'templateName', 'familyName', 'personName'] %}
 name: {{ range }} = Field(default={{ field }}
 {%- else -%}
 {{name}}: {{ range }} = Field(default={{ field }}
