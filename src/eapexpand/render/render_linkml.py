@@ -157,7 +157,7 @@ def generate_schema_builder(
         use_attributes=True,
     )
     # TODO: WIP for defining the a class for CORE rules
-    # rule = ClassDefinition("Rule", description="A USDM CDISC Core rule")
+    rule = ClassDefinition("Rule", description="A USDM CDISC Core rule")
     # """
     # self.core_id: str = record_params["core_id"]
     # self.reference: List[dict] = record_params["reference"]
@@ -177,18 +177,18 @@ def generate_schema_builder(
     # self.actions: dict = record_params["actions"]
     # self.output_variables: dict = record_params.get("output_variables")
     # """
-    # sb.add_class(
-    #     rule,
-    #     slots=[
-    #         SlotDefinition(name="text", range="string", description="Verbatim Text describing the rule", required=True),
-    #         SlotDefinition(name="resultType", description="Type of Result (WARNING/ERROR)", range="string", required=True),
-    #         SlotDefinition(name="targetEntities", description="Entities to which this rule applies", range="string", minimum_cardinality=0),
-    #         SlotDefinition(name="targetAttributes", description="Entity attributes to which this rule applies", range="string", minimum_cardinality=0),
-    #         SlotDefinition(name="coreRuleId", description="CORE Rule Identifier", range="string", required=True),
-    #         SlotDefinition(name="checkId", description="Check Identifier", range="string", required=True),
-    #     ],
-    #     use_attributes=True
-    # )
+    sb.add_class(
+        rule,
+        slots=[
+            SlotDefinition(name="text", range="string", description="Verbatim Text describing the rule", required=True),
+            SlotDefinition(name="resultType", description="Type of Result (WARNING/ERROR)", range="string", required=True),
+            SlotDefinition(name="targetEntities", description="Entities to which this rule applies", range="string", minimum_cardinality=0),
+            SlotDefinition(name="targetAttributes", description="Entity attributes to which this rule applies", range="string", minimum_cardinality=0),
+            SlotDefinition(name="coreRuleId", description="CORE Rule Identifier", range="string", required=True),
+            SlotDefinition(name="checkId", description="Check Identifier", range="string", required=True),
+        ],
+        use_attributes=True
+    )
 
     for obj in document.objects:
         if obj.object_type == "Class":
