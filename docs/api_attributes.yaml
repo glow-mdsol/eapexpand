@@ -1,12 +1,8 @@
 addedAttributes:
   StudyDesign:
-    - name: conditions
-      description: The conditions of the study design.
-      type: Condition
-      multivalued: true
-    - name: dictionaries
-      description: The dictionaries used in the study design.
-      type: SyntaxTemplateDictionary
+    - name: analysisPopulations
+      description: The Analysis Populations for the study
+      type: AnalysisPopulation
       multivalued: true
     - name: biomedicalConcepts
       description: The biomedical concepts used in the study design.
@@ -20,64 +16,184 @@ addedAttributes:
       description: The biomedical concept surrogates used in the study design.
       type: BiomedicalConceptSurrogate
       multivalued: true
+    - name: conditions
+      description: The conditions of the study design.
+      type: Condition
+      multivalued: true
+    - name: dictionaries
+      description: The dictionaries used in the study design.
+      type: SyntaxTemplateDictionary
+      multivalued: true
+    - name: eligibilityCriteria
+      description: The eligibility criteria of the study design.
+      type: EligibilityCriterion
+      multivalued: true
+    - name: eligibilityCriterionItems
+      description: The eligibility criteria of the study version.
+      type: EligibilityCriterionItem
+      multivalued: true
+  StudyVersion:
+    - name: administrableProducts
+      description: The AdministrableProducts involved with a version.
+      type: AdministrableProduct
+      multivalued: true
+    - name: bcSurrogates
+      description: The set of BiomedicalConcept Surrogates.
+      type: BiomedicalConceptSurrogate
+      multivalued: true
+    - name: biomedicalConcepts
+      description: The biomedical concepts used in the study design.
+      type: BiomedicalConcept
+      multivalued: true
+    - name: bcCategories 
+      description: The biomedical concept categories used in the study design.
+      type: BiomedicalConceptCategory
+      multivalued: true
+    - name: criteria
+      description: The Eligibility Criteria for a study.
+      type: EligibilityCriterion
+      multivalued: true
+    - name: conditions
+      description: The conditions of the study design.
+      type: Condition
+      multivalued: true
+    - name: dictionaries
+      description: The dictionaries used in the study design.
+      type: SyntaxTemplateDictionary
+      multivalued: true
+    - name: eligibilityCriterionItems
+      description: The eligibility criteria of the study version.
+      type: EligibilityCriterionItem
+      multivalued: true
+    - name: medicalDevices
+      description: The medical devices involved with a version.
+      type: MedicalDevice
+      multivalued: true
+    - name: narrativeContentItems
+      description: The NarrativeContentItems involved with a version.
+      type: NarrativeContentItem
+      multivalued: true
+    - name: organizations
+      description: The Organisations involved with a version.
+      type: Organization
+      multivalued: true
+    - name: productOrganizationRoles
+      description: The product organization roles for a study version.
+      type: ProductOrganizationRole
+      multivalued: true
+    - name: roles
+      description: The StudyRoles involved with a version.
+      type: StudyRole
+      multivalued: true
+    - name: studyInterventions
+      description: The study interventions involved with a version.
+      type: StudyIntervention
+      multivalued: true
+  StudyArm:
+    - name: populations
+      description: The Population Definitions for the Study Arm.
+      type: PopulationDefinition
+      multivalued: true
 apiAttributes:
+  activities:
+    name: activityIds
+  appliesTo:
+    name: appliesToId
+    names: appliesToIds
+  analysisPopulation:
+    name: analysisPopulationId
+  arm:
+    name: armId
+  administrableProduct:
+    name: administrableProductId  
   bcSurrogates:
     name: bcSurrogateIds
   bcCategories:
     name: bcCategoryIds
-  appliesTo:
-    name: appliesToIds
-  context:
-    name: contextIds
-  members:
-    name: memberIds
   biomedicalConcepts:
     name: biomedicalConceptIds
-  previous:
-    name: previousId
-  next:
-    name: nextId
-  activities:
-    name: activityIds
-  timelineExit:
-    name: timelineExitId
-  encounters:
-    name: encounterIds
-  conditionTarget:
-    name: conditionTargetId
-  defaultCondition:
-    name: defaultConditionId
-  relativeFromScheduledInstance:
-    name: relativeFromScheduledInstanceId
-  relativeToScheduledInstance:
-    name: relativeToScheduledInstanceId
-  entry:
-    name: entryId
-  timeline:
-    name: timelineId
-  epoch:
-    name: epochId
-  elements:
-    name: elementIds
-  studyInterventions:
-    name: studyInterventionIds
-  studyIntervention:
-    name: studyInterventionId
-  arm:
-    name: armId
-  populations:
-    name: populationIds
-  documentVersions:
-    name: documentVersionIds
   children:
     name: childIds
-  dictionary:
-    name: dictionaryId
-  variableOfInterest:
-    name: variableOfInterestId
+  context:
+    name: contextIds
+  conditionTarget:
+    name: conditionTargetId
   contentItem:
     name: contentItemId
   criteria:
     name: criterionIds
+  criterionItem:
+    name: criterionItemId
+  documentVersion:
+    name: documentVersionId
+  dictionary:
+    name: dictionaryId
+  documentVersions:
+    name: documentVersionIds
+  defaultCondition:
+    name: defaultConditionId
+  elements:
+    name: elementIds
+  encounters:
+    name: encounterIds
+  encounter:
+    name: encounterId
+  entry:
+    name: entryId
+  epoch:
+    name: epochId
+  embeddedProduct:
+    name: embeddedProductId
+  eligibilityCriterionItems:
+    name: eligibilityCriterionItemIds
+  forStudySite:
+    name: forStudySiteId
+  forGeographicScope:
+    name: forGeographicScopeId
+  forStudyCohort:
+    name: forStudyCohortId
+  indications:
+    name: indicationIds
+  interventions:
+    name: interventionIds
+  members:
+    name: memberIds
+  medicalDevices:
+    name: medicalDeviceIds
+  medicalDevice:
+    name: medicalDeviceId
+  next:
+    name: nextId
+  organizations:
+    name: organizationIds
+  organization:
+    name: organizationId
+  productOrganizationRoles:
+    name: productOrganizationRoleIds
+  populations:
+    name: populationIds
+  previous:
+    name: previousId
+  relativeFromScheduledInstance:
+    name: relativeFromScheduledInstanceId
+  relativeToScheduledInstance:
+    name: relativeToScheduledInstanceId
   scheduledAt:
     name: scheduledAtId
+  scope:
+    name: scopeId
+  studyInterventions:
+    name: studyInterventionIds
+  studyIntervention:
+    name: studyInterventionId
+  subsetOf:
+    name: subsetOfIds
+  timelineExit:
+    name: timelineExitId
+  timeline:
+    name: timelineId
+  variableOfInterest:
+    name: variableOfInterestId
+mapTypes:
+  blindingSchema:
+    type: AliasCode

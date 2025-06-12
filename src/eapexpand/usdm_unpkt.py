@@ -82,20 +82,22 @@ def load_usdm_ct(filename: str):
     _value_sets = wbk["DDF valid value sets"]
     codelists = {}
 
+    has_extensible = False
     # iterate over the rows
     for idx, row in enumerate(_value_sets.iter_rows(min_row=6, values_only=True)):
         if idx == 0:
-            has_extensible = "Codelist Extensibility (Yes/No)" in headers
-        else:
-            has_extensible = False
+            _headers = [x for x in row if x]
+            has_extensible = "Codelist Extensibility (Yes/No)" in _headers
         # get the entity
         codeset = PermissibleValue.from_row(row, has_extensible)
+        assert codeset.codelist_c_code.startswith("C"), f"Invalid codelist code: {codeset.codelist_c_code}"
         if codeset.codelist_c_code not in codelists:
             # create a new codelist
             codelists[codeset.codelist_c_code] = CodeList.from_pvalue(codeset)
         codelists[codeset.codelist_c_code].add_item(codeset)
 
-    for entity in entities.values():  # type: DDFEntity
+    for entity in entities.values():  
+        entity: DDFEntity
         for attr in entity.all_attributes.values():
             if attr.has_value_list:
                 if attr.external_code_list is not None:
@@ -217,7 +219,7 @@ def main_usdm(
     #         if attr.definition:
     #             definitions[attr.logical_data_model_name] = attr.definition
     for aspect, genflag in gen.items():
-        print("Checking generation of ", aspect, "as", genflag)
+        logger.info(f"Checking generation of {aspect} as {genflag}")
         if genflag:
             if aspect == "prisma":
                 from .render.render_prisma import generate as generate_prisma

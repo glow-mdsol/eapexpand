@@ -18,16 +18,22 @@ linkml = "^1.7.4"
 python-dotenv = "^1.0.1"
 oaklib = "^0.6.16"
 inflect = "^7.3.1"
-
-[tool.poetry.scripts]
-expand="eapexpand.cli:main"
+black = "^24.8.0"
+dictdiffer = "^0.9.0"
+linkml-renderer = "^0.3.1"
 
 [tool.poetry.group.shapes.dependencies]
 rdflib = "^6.3.2"
 
-
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.1"
+ipykernel = "^6.29.5"
+
+[tool.poetry.scripts]
+expand="eapexpand.cli:main"
+load_usdm="eapexpand.cli:load_usdm"
+diff="eapexpand.helpers.linkml_diff:main"
+
 
 [build-system]
 requires = ["poetry-core"]

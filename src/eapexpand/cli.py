@@ -55,3 +55,37 @@ def main():
         from .unpkt import main
 
         main(source, output_dir, gen)
+
+
+def load_usdm():
+    """
+    Process the USDM file
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "version", help="USDM version", action="store", default=None
+    )
+    parser.add_argument("--output", type=str, help="Output directory", default="output")
+    opts = parser.parse_args()
+    assert opts.version is not None, "USDM version is required"
+    source_version = opts.version
+    gen=dict(linkml=True)
+    output_dir = opts.output
+    usdm_ct = Path.cwd() / "input" / source_version / f"{source_version}_USDM_CT.xlsx"
+    assert usdm_ct.is_file(), "USDM Controlled Terms file not found"
+    source = Path.cwd() / "input" / source_version / f"{source_version}_USDM_UML.qea"
+    assert source.is_file(), "USDM file not found"
+    api_metadata_file = Path.cwd() / "docs" / "api_attributes.yaml" 
+    if api_metadata_file.is_file():
+        with open(api_metadata_file, "r") as f:
+            api_metadata = yaml.safe_load(f.read())
+    else:
+        api_metadata = {}    
+    from .usdm_unpkt import main_usdm
+    main_usdm(
+        source_dir_or_file=source,
+        controlled_term=usdm_ct,
+        output_dir=output_dir,
+        gen=gen,
+        api_metadata=api_metadata,
+    )
