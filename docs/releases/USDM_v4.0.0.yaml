@@ -11400,6 +11400,33 @@ classes:
         range: Code
         multivalued: true
         inlined_as_list: true
+  Rule:
+    description: A USDM CDISC Core rule
+    attributes:
+      text:
+        description: Verbatim Text describing the rule
+        range: string
+        required: true
+      resultType:
+        description: Type of Result (WARNING/ERROR)
+        range: string
+        required: true
+      targetEntities:
+        description: Entities to which this rule applies
+        range: string
+        minimum_cardinality: 0
+      targetAttributes:
+        description: Entity attributes to which this rule applies
+        range: string
+        minimum_cardinality: 0
+      coreRuleId:
+        description: CORE Rule Identifier
+        range: string
+        required: true
+      checkId:
+        description: Check Identifier
+        range: string
+        required: true
   StudyDefinitionDocumentVersion:
     definition_uri: ncit:C215491
     description: A representation of a particular edition or snapshot of the study
