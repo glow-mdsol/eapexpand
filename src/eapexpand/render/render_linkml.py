@@ -73,9 +73,12 @@ def generate_schema_builder(
     elif document.prefix:
         logger.info(f"Using document prefix: {document.prefix}")
         _id = document.prefix
+    else:
+        logger.warning("No schema_id or document prefix provided, using default.")
+        _id = f"https://example.org/{name}"
     p = inflect.engine()
     sb = SchemaBuilder(name, id=_id)
-    sb.description = document.description
+    # sb.description = document.description
     # add default elements
     sb.add_defaults()
     for prefix, uri in document.prefixes.items():
@@ -90,10 +93,31 @@ def generate_schema_builder(
     sb.add_class(
         message,
         slots=[
-            SlotDefinition(name="study", range="Study", required=True, inlined=True),
-            SlotDefinition(name="usdmVersion", range="string", required=True),
-            SlotDefinition(name="systemVersion", range="string", required=True),
-            SlotDefinition(name="systemName", range="string", required=True),
+            SlotDefinition(
+                name="study",
+                range="Study",
+                required=True,
+                inlined=True,
+                description="USDM Study Definition",
+            ),
+            SlotDefinition(
+                name="usdmVersion",
+                range="string",
+                required=True,
+                description="Version of the USDM message",
+            ),
+            SlotDefinition(
+                name="systemVersion",
+                range="string",
+                required=True,
+                description="Version of the System that generated the USDM message",
+            ),
+            SlotDefinition(
+                name="systemName",
+                range="string",
+                required=True,
+                description="Name of the System that generated the USDM message",
+            ),
         ],
         use_attributes=True,
     )
@@ -180,22 +204,83 @@ def generate_schema_builder(
     sb.add_class(
         rule,
         slots=[
-            SlotDefinition(name="text", range="string", description="Verbatim Text describing the rule", required=True),
-            SlotDefinition(name="resultType", description="Type of Result (WARNING/ERROR)", range="string", required=True),
-            SlotDefinition(name="targetEntities", description="Entities to which this rule applies", range="string", minimum_cardinality=0),
-            SlotDefinition(name="targetAttributes", description="Entity attributes to which this rule applies", range="string", minimum_cardinality=0),
-            SlotDefinition(name="coreRuleId", description="CORE Rule Identifier", range="string", required=True),
-            SlotDefinition(name="checkId", description="Check Identifier", range="string", required=True),
+            SlotDefinition(
+                name="text",
+                range="string",
+                description="Verbatim Text describing the rule",
+                required=True,
+            ),
+            SlotDefinition(
+                name="resultType",
+                description="Type of Result (WARNING/ERROR)",
+                range="string",
+                required=True,
+            ),
+            SlotDefinition(
+                name="targetEntities",
+                description="Entities to which this rule applies",
+                range="string",
+                minimum_cardinality=0,
+            ),
+            SlotDefinition(
+                name="targetAttributes",
+                description="Entity attributes to which this rule applies",
+                range="string",
+                minimum_cardinality=0,
+            ),
+            SlotDefinition(
+                name="coreRuleId",
+                description="CORE Rule Identifier",
+                range="string",
+                required=True,
+            ),
+            SlotDefinition(
+                name="checkId",
+                description="Check Identifier",
+                range="string",
+                required=True,
+            ),
         ],
-        use_attributes=True
+        use_attributes=True,
     )
 
+    # add the default types
+    base = ClassDefinition(
+        "Base", description="A base class for all USDM classes", mixin=True
+    )
+    sb.add_class(
+        base,
+        slots=[
+            SlotDefinition(
+                name="instanceType",
+                range="string",
+                description="API attribute to identify the class type",
+                multivalued=False,
+                inlined=True,
+            ),
+            SlotDefinition(
+                name="extensionAttributes",
+                range="ExtensionAttribute",
+                description="Extension attributes for this instance",
+                multivalued=True,
+                inlined=True,
+                required=False,
+            ),
+            SlotDefinition(
+                name="rules",
+                range="Rule",
+                description="Set of rules that apply to this instanceType",
+                multivalued=True,
+                inlined=True,
+                required=False,
+            ),
+        ],
+        use_attributes=True,
+    )
     for obj in document.objects:
         if obj.object_type == "Class":
             # holder for extra attrs
-            _class = ClassDefinition(
-                obj.name,
-            )  # type: ClassDefinition
+            _class = ClassDefinition(obj.name, mixins=["Base"])  # type: ClassDefinition
             if obj.description:
                 _class.description = obj.description
             if obj.reference_url:
@@ -266,11 +351,25 @@ def generate_schema_builder(
                         if attr.attribute_type not in TYPE_MAPPING:
                             _missing_types.append(attr.attribute_type)
                         # NOTE: this is a hack to handle the different types of superclass
-                        if attr.attribute_type in ["ScheduledInstance", "ScheduledDecisionInstance", "ScheduledActivityInstance"]:
-                            _attr.any_of = [{"range": x} for x in ["ScheduledInstance", "ScheduledDecisionInstance", "ScheduledActivityInstance"]] 
+                        if attr.attribute_type in [
+                            "ScheduledInstance",
+                            "ScheduledDecisionInstance",
+                            "ScheduledActivityInstance",
+                        ]:
+                            _attr.any_of = [
+                                {"range": x}
+                                for x in [
+                                    "ScheduledInstance",
+                                    "ScheduledDecisionInstance",
+                                    "ScheduledActivityInstance",
+                                ]
+                            ]
                         # NOTE: this is a hack to handle the different types of superclass - this has been made concrete in 4.0
                         elif attr.attribute_type in ["StudySite" "StudyCohort"]:
-                            _attr.any_of = [{"range": x} for x in ["StudySite", "StudyCohort", "GeographicScope"]] 
+                            _attr.any_of = [
+                                {"range": x}
+                                for x in ["StudySite", "StudyCohort", "GeographicScope"]
+                            ]
                         else:
                             _attr.range = TYPE_MAPPING.get(
                                 attr.attribute_type, attr.attribute_type
@@ -292,7 +391,7 @@ def generate_schema_builder(
                         _attr.required = False
                     else:
                         _attr.required = True
-                
+
                 else:
                     # Attribute uses the lower_bound and upper_bound
                     if attr.lower_bound == "1":
@@ -310,6 +409,7 @@ def generate_schema_builder(
                     _attr.title = attr.preferred_term
                 if attr.synonyms:
                     _attr.aliases = attr.synonyms
+                # TODO: add the description, pydantic exporter doesn't expose all the attributes; just title, description, and values
                 if attr.codelist:
                     # are there code values for this attribute?
                     _codelist = attr.codelist  # type: CodeList
