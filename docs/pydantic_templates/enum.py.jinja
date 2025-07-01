@@ -1,32 +1,17 @@
-class {{ name }}(ConfiguredBaseModel):
-{% if description %}
-    """
-    {{ description }}
+class {{ name }}(Code):
+{% if description or model_config["title"] %}
     """
 {% endif %}
-    id: str = Field(
-        ...,
-        title="id",
-        description="""One or more characters used to identify, name, or characterize the nature, properties, or contents of a thing.""",
-    )
-    code: str = Field(
-        ..., title="Code Value", description="""The literal value of a code."""
-    )
-    codeSystem: str = Field(
-        ...,
-        title="Code System Name",
-        description="""The literal identifier (i.e., distinctive designation) of the system used to assign and/or manage codes.""",
-    )
-    codeSystemVersion: str = Field(
-        ...,
-        title="Code System Version",
-        description="""The version of the code system.""",
-    )
-    decode: str = Field(
-        ...,
-        title="Decode",
-        description="""Standardized or dictionary-derived human readable text associated with a code.""",
-    )
+{% if model_config["title"] %}
+    {{ model_config["title"] }}
+{% endif %}
+{% if description %}
+    {{ description }}
+{% endif %}
+{% if description or model_config["title"] %}
+    """
+{% endif %}
+
 {% if values %}
 
     def __post_init__(self):
