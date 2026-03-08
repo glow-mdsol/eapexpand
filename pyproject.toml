@@ -1,40 +1,58 @@
-[tool.poetry]
+[project]
 name = "eapexpand"
 version = "0.1.0"
 description = "Simple EAP file expansion tool"
-authors = ["Geoff Low <glow@mdsol.com>"]
+authors = [{ name = "Geoff Low", email = "glow@mdsol.com" }]
+requires-python = ">=3.10,<4"
 readme = "README.md"
-packages = [
-    {include = "eapexpand", from = "src"},
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "openpyxl>=3.0.10,<4",
+    "dataclasses-json>=0.6.4,<0.7",
+    "mdb-parser>=0.0.3,<0.0.4",
+    "linkml>=1.9.0,<2",
+    "python-dotenv>=1.0.1,<2",
+    "oaklib>=0.6.16,<0.7",
+    "inflect>=7.3.1,<8",
+    "dictdiffer>=0.9.0,<0.10",
+    "linkml-model>=1.8.0",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-openpyxl = "^3.0.10"
-dataclasses-json = "^0.6.4"
-mdb-parser = "^0.0.3"
-linkml-model = "^1.7.0"
-linkml = "^1.7.4"
-python-dotenv = "^1.0.1"
-oaklib = "^0.6.16"
-inflect = "^7.3.1"
-black = "^24.8.0"
-dictdiffer = "^0.9.0"
-linkml-renderer = "^0.3.1"
+[project.scripts]
+expand = "eapexpand.cli:main"
+load_usdm = "eapexpand.cli:load_usdm"
+diff = "eapexpand.helpers.linkml_diff:main"
 
-[tool.poetry.group.shapes.dependencies]
-rdflib = "^6.3.2"
+[dependency-groups]
+shapes = ["rdflib>=7.5.0,<8"]
+dev = [
+    "pytest>=8.0.1,<9",
+    "ipykernel>=6.29.5,<7",
+    "pyrefly>=0.50.1",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.1"
-ipykernel = "^6.29.5"
+[tool.uv]
+default-groups = [
+    "shapes",
+    "dev",
+]
 
-[tool.poetry.scripts]
-expand="eapexpand.cli:main"
-load_usdm="eapexpand.cli:load_usdm"
-diff="eapexpand.helpers.linkml_diff:main"
+[tool.hatch.build.targets.sdist]
+include = ["src/eapexpand"]
 
+[tool.hatch.build.targets.wheel]
+include = ["src/eapexpand"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/eapexpand" = "eapexpand"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

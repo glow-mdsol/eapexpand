@@ -1,0 +1,46 @@
+[pyrefly]
+# Project configuration
+project_name = "eapexpand"
+python_version = "3.10"
+
+# Source paths
+source_dirs = ["src/eapexpand"]
+test_dirs = ["test"]
+
+# Exclude patterns
+exclude = [
+    "__pycache__",
+    "*.pyc",
+    "*.pyo",
+    "*.egg-info",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "dist",
+    "build",
+    "output",
+    "input",
+]
+
+# Code quality settings
+[pyrefly.quality]
+max_line_length = 100
+enable_type_checking = true
+enable_linting = true
+enable_formatting = true
+
+# Test configuration
+[pyrefly.testing]
+framework = "pytest"
+coverage_threshold = 80
+test_pattern = "test_*.py"
+
+# Documentation
+[pyrefly.docs]
+format = "markdown"
+output_dir = "docs"
+
+# Dependencies
+[pyrefly.dependencies]
+auto_update = false
+allow_prerelease = false
