@@ -33,6 +33,7 @@ def generate_schema_builder(
     document: Document,
     schema_id: Optional[str] = None,
     output_dir: Optional[str] = "output",
+    use_internal_enums: bool = True,
 ):
     """
     Generate a schema builder for creating a LinkML document.
@@ -49,7 +50,7 @@ def generate_schema_builder(
             prefix will be used. Defaults to None.
         output_dir (Optional[str], optional): The directory where the generated schema YAML file
             will be saved. Defaults to "output".
-
+        use_internal_enums (bool, optional): Whether to use internal enumerations for code lists.
     Raises:
         ValueError: If required attributes or configurations are missing in the document.
 
@@ -277,6 +278,17 @@ def generate_schema_builder(
         ],
         use_attributes=True,
     )
+    _id = SlotDefinition(name="id",
+        definition_uri="ncit:C25364",
+        description="One or more characters used to identify, name, or characterize"
+          " the nature, properties, or contents of a thing.",
+        title="id",
+        aliases=["Identifier", "Unique Identifier"],
+        identifier=True,
+        range="string",
+        multivalued=False,
+        inlined=True)
+    sb.add_slot(_id)
     for obj in document.objects:
         if obj.object_type == "Class":
             # holder for extra attrs
@@ -306,6 +318,10 @@ def generate_schema_builder(
             TYPE_MAPPING[obj.name] = obj.name
             _attributes: List[SlotDefinition] = []
             for attr in obj.all_attributes:
+                if attr.name in IDENTIFIER_TYPES:
+                    logger.info(f"Adding identifier for {attr.name}")
+                    _class.slots = ["id"]
+                    continue
                 if attr.range not in TYPE_MAPPING:
                     # can we work out the --Id attributes
                     pass
@@ -374,9 +390,6 @@ def generate_schema_builder(
                             _attr.range = TYPE_MAPPING.get(
                                 attr.attribute_type, attr.attribute_type
                             )
-                if attr.name in IDENTIFIER_TYPES:
-                    logger.info(f"Adding identifier for {attr.name}")
-                    _attr.identifier = True
                 #    _attr.multivalued = False
                 #     _attr.required = False
                 if isinstance(attr, (Connector,)):
@@ -440,18 +453,19 @@ def generate_schema_builder(
                         if _codelist.alternate_name:
                             # TODO: add a mapping to the alternate name
                             pass
-                        for pv in _codelist.items:
-                            _pv = PermissibleValue(text=str(pv.preferred_term))
-                            _pv.meaning = "ncit:" + pv.concept_c_code
-                            _pv.name = pv.concept_c_code
-                            if pv.preferred_term:
-                                _pv.title = pv.preferred_term
-                                _pv.text = pv.preferred_term
-                            if pv.synonyms:
-                                _pv.aliases = pv.synonyms
-                            if pv.definition:
-                                _pv.description = pv.definition
-                            _enum.permissible_values[_pv.text] = _pv
+                        if use_internal_enums:
+                            for pv in _codelist.items:
+                                _pv = PermissibleValue(text=str(pv.preferred_term))
+                                _pv.meaning = "ncit:" + pv.concept_c_code
+                                _pv.name = pv.concept_c_code
+                                if pv.preferred_term:
+                                    _pv.title = pv.preferred_term
+                                    _pv.text = pv.preferred_term
+                                if pv.synonyms:
+                                    _pv.aliases = pv.synonyms
+                                if pv.definition:
+                                    _pv.description = pv.definition
+                                _enum.permissible_values[_pv.text] = _pv
                         sb.add_enum(_enum)
                     if attr.attribute_type == "AliasCode":
                         logger.info(f"Adding AliasCode for {_codelist_name}")
@@ -489,8 +503,8 @@ def generate_schema_builder(
                 #     ] = _attr
                 # else:
                 # _class.attributes[_attr.name] = _attr
-            # _class.attributes = _attributes
-            sb.add_class(_class, slots=_attributes, use_attributes=True)
+            _class.attributes = _attributes
+            sb.add_class(_class)
     if "Map" in set(_missing_types) - set(TYPE_MAPPING.keys()):
         print("Adding Map type")
         # add a map class

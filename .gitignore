@@ -7,3 +7,24 @@ __pycache__
 
 .DS_Store
 *.log
+
+.vscode
+.idea
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+*.bak
+*.tmp
+*.zip
+*.tar.gz
+*.egg-info
+dist
+build
+*.egg
+*.egg-info
+*.egg-info/
+.eggs/
+*.eggs/
+*.egg-info/

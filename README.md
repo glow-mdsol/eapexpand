@@ -23,11 +23,11 @@
 * Convert the output location (general EAPX)
    * With an expanded EAPX file (see below)
        ```shell
-       $ poetry run expand input/usdm output
+       $ uv run expand input/usdm output
        ``` 
    * With a QEA file
       ```shell
-      $ poetry run expand input/usdm.qea output
+      $ uv run expand input/usdm.qea output
       ```
 
 ## Running - USDM
@@ -35,11 +35,11 @@
 * Convert the output location (USDM EAPX/QEA)
   * For the USDM content we can merge (depending on formatting issues, etc) the definitions/codelists from the CT
      ```shell
-     $ poetry run expand --usdm --usdm-ct input/USDM_CT.xlsx input/usdm_main
+     $ uv run expand --usdm --usdm-ct input/USDM_CT.xlsx input/usdm_main
      ```
   * There is a short-cut for USDM
   ```shell
-    $ poetry run load_usdm v3.13.0
+    $ uv run load_usdm v3.13.0
   ```
 
 ## Output Types
@@ -47,7 +47,7 @@
 A Excel formatted spreadsheet will be generated for the model, normalising the entities and attributes into a tabular format.
 
 ### LinkML
-A LinkML formatted YAML file will be generated for the model (Still a WIP).
+A LinkML formatted YAML file will be generated for the model (Still a WIP).  There is an optional `--internal-enum` option to add the Permissible Values to the enumeration (it makes the file very large)
 
 ## Helpers
 

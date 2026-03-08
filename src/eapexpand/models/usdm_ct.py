@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-"""
-Handles the loading of the USDM CT
-"""
 
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 from dataclasses_json import config, dataclass_json
+
+"""
+Handles the loading of the USDM CT
+"""
 
 
 @dataclass_json

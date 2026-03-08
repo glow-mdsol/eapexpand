@@ -1,3 +1,4 @@
+from sys import intern
 import sys
 import argparse
 from pathlib import Path
@@ -12,6 +13,7 @@ def main():
     parser.add_argument("--usdm-ct", type=str, help="Path to Controlled Terms file")
     parser.add_argument("--output", type=str, help="Output directory", default="output")
     parser.add_argument("--api-metadata", type=str, help="API Metadata file")
+    parser.add_argument("--internal-enums", help="Use internal enumerations for code lists", action="store_true", default=False)
     parser.add_argument("source", type=str, help="Source directory or file")
     parser.add_argument(
         "--prisma", help="Generate Prisma Schema", action="store_true", default=False
@@ -50,6 +52,7 @@ def main():
             output_dir=output_dir,
             gen=gen,
             api_metadata=api_metadata,
+            internal_enums=opts.internal_enums
         )
     else:
         from .unpkt import main

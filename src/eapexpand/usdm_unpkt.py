@@ -144,8 +144,10 @@ def main_usdm(
     controlled_term: str, 
     output_dir: str, 
     api_metadata: dict,
-    gen: Dict[str, bool]
+    gen: Dict[str, bool],
+    internal_enums: bool = False
 ):
+    print(f"Processing USDM from {source_dir_or_file} with CT {controlled_term}: using internal enums: {internal_enums}")
     NAMESPACE = "https://cdisc.org/usdm"
     if Path(source_dir_or_file).is_file():
         assert Path(source_dir_or_file).suffix == ".qea", "Only QEA files are supported"
@@ -166,7 +168,7 @@ def main_usdm(
     document.version = version
     document.root_item = "Study"
     document.description = (
-        "Unified Study Definitions Model version 3. The industry standard "
+        "Unified Study Definitions Model version 4. The industry standard "
         "for digital protocol content, defining reusable protocols expressing scientific questions "
         "via structure and concepts that are reused and referenced downstream, creating a knowledge graph."
     )
@@ -237,6 +239,7 @@ def main_usdm(
                     document=document,
                     schema_id="https://cdisc.org/usdm/" + document.name,
                     output_dir=output_dir,
+                    use_internal_enums=internal_enums
                 )
             elif aspect == "shapes":
                 from .render.render_shapes import generate as generate_shapes
