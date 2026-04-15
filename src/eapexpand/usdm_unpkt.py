@@ -103,6 +103,9 @@ def load_usdm_ct(filename: str):
                 if attr.external_code_list is not None:
                     if attr.external_code_list.startswith("C"):
                         if attr.external_code_list == "CNEW":
+                            logger.warning(
+                                f"Attribute {entity.logical_data_model_name}.{attr.logical_data_model_name} has a new codelist that is not yet defined in the CT. Creating a placeholder codelist with code CNEW-{attr.logical_data_model_name}."
+                            )
                             # create a new codelist placeholder
                             codelist = CodeList(
                                 entity_name=entity.entity_name,
@@ -116,7 +119,7 @@ def load_usdm_ct(filename: str):
                             attr.codelist = codelist
                         elif attr.external_code_list not in codelists:
                             # pull the codelist from the API
-                            print(
+                            logger.info(
                                 f"Retrieving codelist {attr.external_code_list} for {entity.entity_name}.{attr.logical_data_model_name}"
                             )
                             codelist = ct.retrieve_valueset(attr.external_code_list)

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 from .eap import (
     Connector,
     Document,
-    Object,
+    ModelObject,
     Attribute,
     Class,
     Enumeration,
@@ -17,8 +17,8 @@ from .eap import (
     DataType,
     Note,
     Artifact,
-    ObjectProperty,
-    Package,
+    ModelObjectProperty,
+    ModelPackage,
     State,
     StateNode,
     Text,
@@ -59,7 +59,7 @@ def load_from_file(
         _prefix = f"http://example.org/{Path(filename).stem}"
     logger.info("Loading packages")
     for package in cur.execute("SELECT * FROM t_package").fetchall():
-        _package = Package.from_dict(package)
+        _package = ModelPackage.from_dict(package)
         _packages[_package.id] = _package
 
     for _package in _packages.values():
@@ -81,9 +81,9 @@ def load_from_file(
             case "Note":
                 _object = Note.from_dict(obj)
             case "Object":
-                _object = Object.from_dict(obj)
+                _object = ModelObject.from_dict(obj)
             case "ObjectProperty":
-                _object = ObjectProperty.from_dict(obj)
+                _object = ModelObjectProperty.from_dict(obj)
             case "State":
                 _object = State.from_dict(obj)
             case "StateNode":
@@ -91,7 +91,7 @@ def load_from_file(
             case "Text":
                 _object = Text.from_dict(obj)
             case "Package":
-                _object = Package.from_dict(obj)
+                _object = ModelPackage.from_dict(obj)
                 # Merge the package metadata
                 for _, package in _packages.items():
                     if package.ea_guid == _object.ea_guid:
@@ -206,7 +206,7 @@ def load_from_file(
     # Add the API attributes
     if api_metadata:
         for obj in data.values():
-            if not isinstance(obj, Object):
+            if not isinstance(obj, ModelObject):
                 continue
             if api_metadata.get("addedAttributes", {}).get(obj.name):
                 for attr in api_metadata["addedAttributes"][obj.name]:

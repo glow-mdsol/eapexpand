@@ -60,7 +60,7 @@ class Diagram:
         self._version = version
         self._objects = {}
 
-    def add_object(self, sequence: int, model_object: Object) -> None:
+    def add_object(self, sequence: int, model_object: ModelObject) -> None:
         self._objects[sequence] = model_object
 
 
@@ -105,8 +105,8 @@ class Document:
         self,
         name: str,
         prefix: str,
-        packages: List[Package],
-        objects: List[Object],
+        packages: List[ModelPackage],
+        objects: List[ModelObject],
         diagrams: List[Diagram],
     ) -> None:
         self.name = name
@@ -164,17 +164,17 @@ class Document:
         return self._diagrams
 
     @property
-    def packages(self) -> List[Object]:
-        return [x for x in self._objects if isinstance(x, Package)]
+    def packages(self) -> List[ModelObject]:
+        return [x for x in self._objects if isinstance(x, ModelPackage)]
 
     @property
-    def objects(self) -> List[Object]:
+    def objects(self) -> List[ModelObject]:
         """
         Return the objects in the document, ordered by object_id
         """
         return sorted(self._objects)
 
-    def get_object(self, object_id: int) -> Optional[Object]:
+    def get_object(self, object_id: int) -> Optional[ModelObject]:
         for obj in self._objects:
             if obj.object_id == object_id:
                 return obj
@@ -195,15 +195,15 @@ class Document:
         return [x for x in self._objects if isinstance(x, Connector)]
 
     @property
-    def classes(self) -> List[Object]:
+    def classes(self) -> List[ModelObject]:
         return [x for x in self._objects if isinstance(x, Class)]
 
     @property
-    def states(self) -> List[Object]:
+    def states(self) -> List[ModelObject]:
         return [x for x in self._objects if isinstance(x, State)]
 
     @property
-    def state_nodes(self) -> List[Object]:
+    def state_nodes(self) -> List[ModelObject]:
         return [x for x in self._types if isinstance(x, State)]
 
     @property
@@ -446,8 +446,8 @@ class Connector:
     package_data_5: Optional[str] = field(
         metadata=config(field_name="PDATA5"), default=""
     )
-    source_object: Optional[Object] = None
-    target_object: Optional[Object] = None
+    source_object: Optional[ModelObject] = None
+    target_object: Optional[ModelObject] = None
     # a definition if supplied
     definition: Optional[str] = field(default="")
     # Enumerated value
@@ -608,7 +608,7 @@ class Attribute:
         metadata=config(field_name="Stereotype"), default=""
     )
     ea_guid: Optional[str] = field(metadata=config(field_name="ea_guid"), default=None)
-    attribute_classifier: Optional[Object] = None
+    attribute_classifier: Optional[ModelObject] = None
     default: Optional[str] = field(metadata=config(field_name="Default"), default=None)
     connector: Optional[Connector] = None
     note: Optional[str] = field(metadata=config(field_name="Note"), default="")
@@ -663,14 +663,14 @@ class Attribute:
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class Object:
+class ModelObject:
     """
     """
     object_id: int = field(metadata=config(field_name="Object_ID"), default=None)
     object_type: str = field(metadata=config(field_name="Object_Type"), default="")
     diagram_id: int = field(metadata=config(field_name="Diagram_ID"), default=None)
     package_id: int = field(metadata=config(field_name="Package_ID"), default=None)
-    package: Optional[Package] = None
+    package: Optional[ModelPackage] = None
     ntype: int = field(metadata=config(field_name="NType"), default=0)
     complexity: Optional[str] = field(
         metadata=config(field_name="Complexity"), default=""
@@ -708,8 +708,8 @@ class Object:
     generalizations: Optional[List[Connector]] = field(default_factory=list)
     specializations: Optional[List[Connector]] = field(default_factory=list)
     object_attributes: Optional[List[Attribute]] = field(default_factory=list)
-    properties: Optional[List[ObjectProperty]] = field(default_factory=list)
-    classifies: Optional[List[Object]] = field(default_factory=list)
+    properties: Optional[List[ModelObjectProperty]] = field(default_factory=list)
+    classifies: Optional[List[ModelObject]] = field(default_factory=list)
     edges: Optional[List[Connector]] = field(default_factory=list)
     # a definition if supplied
     definition: Optional[str] = field(default="")
@@ -767,7 +767,7 @@ class Object:
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class Package(Object):
+class ModelPackage(ModelObject):
     """
     Package class represents a data model for handling package-related information.
 
@@ -866,13 +866,13 @@ class Package(Object):
         default=None,
     )
     package_flags: Optional[str] = field(default_factory=list)
-    objects: List[Object] = field(default_factory=list)
-    parent: Optional[Package] = field(default=None, init=False)
+    objects: List[ModelObject] = field(default_factory=list)
+    parent: Optional[ModelPackage] = field(default=None, init=False)
     diagram_id: Optional[int] = field(
         metadata=config(field_name="Diagram_ID"), default=None
     )
 
-    def merge(self, data: Package):
+    def merge(self, data: ModelPackage):
         """
         Merge the data into the package
         """
@@ -906,7 +906,7 @@ class Package(Object):
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class Class(Object):
+class Class(ModelObject):
     pass
 
     def get_attribute(self, attribute_name: str) -> Optional[Attribute | Connector]:
@@ -933,7 +933,7 @@ class EnumeratedValue:
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class Enumeration(Object):
+class Enumeration(ModelObject):
     """
     Enumeration class represents extensions for the USDM (Unified Study Data Model) use case.
 
@@ -998,43 +998,43 @@ class Enumeration(Object):
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class Note(Object):
+class Note(ModelObject):
     pass
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class Boundary(Object):
+class Boundary(ModelObject):
     pass
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class Text(Object):
+class Text(ModelObject):
     pass
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class Artifact(Object):
+class Artifact(ModelObject):
     pass
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class State(Object):
+class State(ModelObject):
     pass
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class StateNode(Object):
+class StateNode(ModelObject):
     pass
 
 
 @dataclass_json(letter_case=LetterCase.PASCAL)
 @dataclass
-class ObjectProperty:
+class ModelObjectProperty:
     property_id: int = field(metadata=config(field_name="PropertyID"))
     object_id: int = field(metadata=config(field_name="Object_ID"))
     property_name: str = field(metadata=config(field_name="Property"))

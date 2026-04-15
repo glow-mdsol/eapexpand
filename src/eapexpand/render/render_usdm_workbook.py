@@ -1,6 +1,6 @@
 import os
 from typing import Dict, Optional
-from eapexpand.models.eap import Attribute, Connector, Document, Object
+from eapexpand.models.eap import Attribute, Connector, Document, ModelObject
 
 from openpyxl import load_workbook, Workbook
 from openpyxl.cell.cell import Cell
@@ -92,22 +92,21 @@ def generate(
         row_num = 2
 
         for obj in pobjects:
-            obj: Object
+            obj: ModelObject
             _output = {}
             if obj.object_type == "Class":
-                _ref = ct_content.get(obj.name)
-                if _ref is None:
+                _ct_reference = ct_content.get(obj.name)
+                if _ct_reference is None:
                     logger.warning(f"Unable to find {obj.name} in CT")
                     continue  # type: Entity
-                # super classes
+                # super classes, we need to make sure the attributes from the generalization are included, but marked as inherited
                 if obj.generalizations:
                     _generalization = document.get_object(
                         obj.generalizations[0].end_object_id
                     )
-                    _ref = ct_content.get(_generalization.name)
                 else:
                     _generalization = None
-                if _ref is None:
+                if _ct_reference is None:
                     if obj.name not in missing_references.get("objects"):
                         missing_references["objects"].append(obj.name)
                 # _attributes = sorted(
@@ -119,14 +118,14 @@ def generate(
                 # )
                 # write the entity
                 write_cell(sheet, row=row_num, column=1, value=obj.name)
-                if _ref:
-                    if _ref.definition:
-                        write_cell(sheet, row=row_num, column=8, value=_ref.definition)
-                    if _ref.nci_c_code:
-                        write_cell(sheet, row=row_num, column=6, value=_ref.nci_c_code)
-                    if _ref.preferred_term:
+                if _ct_reference:
+                    if _ct_reference.definition:
+                        write_cell(sheet, row=row_num, column=8, value=_ct_reference.definition)
+                    if _ct_reference.nci_c_code:
+                        write_cell(sheet, row=row_num, column=6, value=_ct_reference.nci_c_code)
+                    if _ct_reference.preferred_term:
                         write_cell(
-                            sheet, row=row_num, column=7, value=_ref.preferred_term
+                            sheet, row=row_num, column=7, value=_ct_reference.preferred_term
                         )
                 if obj.note:
                     write_cell(sheet, row=row_num, column=5, value=str(obj.note))
@@ -136,6 +135,7 @@ def generate(
                     _attribute: Attribute
                     attrib = _output.setdefault(_attribute.name, {})
                     if not attrib:
+                        # add a reference to show that the attribute is inherited from the generalization
                         if (
                             _generalization
                             and _attribute in _generalization.object_attributes
@@ -149,21 +149,22 @@ def generate(
                             attribute_cardinality=_attribute.cardinality,
                             attribute_note=_attribute.description,
                         )
-                        if _ref:
-                            _attr_ref = _ref.get_attribute(_attribute.name)
+                        if _ct_reference:
+                            _attr_ref = _ct_reference.get_attribute(_attribute.name)
                             if _attr_ref:
                                 attrib["definition"] = _attr_ref.definition
                                 attrib["c_code"] = _attr_ref.nci_c_code
                                 attrib["pref_term"] = _attr_ref.preferred_term
                                 if _attr_ref.has_value_list:
-                                    if _attr_ref.external_code_list:
-                                        attrib[
-                                            "external_value_list"
-                                        ] = _attr_ref.external_code_list
+                                    # Check if it's an external reference (contains "point")
+                                    if _attr_ref.value_list and "point" in _attr_ref.value_list.lower():
+                                        attrib["external_value_list"] = _attr_ref.external_code_list
+                                        print(f"  → External codelist: {_attr_ref.external_code_list}")
                                     elif _attr_ref.codelist_code:
                                         attrib["codelist"] = _attr_ref.codelist_code
+                                        print(f"  → Internal codelist: {_attr_ref.codelist_code}")
                             else:
-                                missing = (_ref.entity_name, _attribute.name)
+                                missing = (_ct_reference.entity_name, _attribute.name)
                                 if missing not in missing_references.get("attributes"):
                                     missing_references["attributes"].append(missing)
                         else:
@@ -172,9 +173,9 @@ def generate(
                                 missing_references["attributes"].append(missing)
                     _output[_attribute.name] = attrib
                 for outgoing_connection in obj.outgoing_connections:  # type: Connector
-                    # print(
-                    #     "Adding connection ", outgoing_connection.name, " to ", obj.name
-                    # )
+                    print(
+                        "Adding connection ", outgoing_connection.name, " to ", obj.name
+                    )
                     outgoing_connection: Connector
                     attrib = dict(
                         attribute_name=outgoing_connection.name,
@@ -184,21 +185,23 @@ def generate(
                         attribute_cardinality=outgoing_connection.dest_card,
                         attribute_note=None,
                     )
-                    _attr_ref = _ref.get_attribute(outgoing_connection.name)
+                    _attr_ref = _ct_reference.get_attribute(outgoing_connection.name)
 
                     if _attr_ref:
                         attrib["definition"] = _attr_ref.definition
                         attrib["c_code"] = _attr_ref.nci_c_code
                         attrib["pref_term"] = _attr_ref.preferred_term
                         if _attr_ref.has_value_list:
-                            if _attr_ref.external_code_list:
-                                attrib[
-                                    "external_value_list"
-                                ] = _attr_ref.external_code_list
-                            if _attr_ref.codelist_code:
+                            print(f"  Value list for {outgoing_connection.name}: {_attr_ref.value_list}")
+                            # Check if it's an external reference (contains "point")
+                            if _attr_ref.value_list and "point" in _attr_ref.value_list.lower():
+                                attrib["external_value_list"] = _attr_ref.external_code_list
+                                print(f"  → External codelist: {_attr_ref.external_code_list}")
+                            elif _attr_ref.codelist_code:
                                 attrib["codelist"] = _attr_ref.codelist_code
+                                print(f"  → Internal codelist: {_attr_ref.codelist_code}")
                     else:
-                        missing = (_ref.entity_name, outgoing_connection.name)
+                        missing = (_ct_reference.entity_name, outgoing_connection.name)
                         if missing not in missing_references.get("connections"):
                             missing_references["connections"].append(missing)
                     _output[attrib.get("attribute_name")] = attrib
@@ -222,9 +225,10 @@ def generate(
                 for _, attrib in enumerate(_output.values()):
                     _codelist = attrib.get("codelist")
                     if _codelist:
+                        print("adding codelist: ", _codelist)
                         _cl = ct_content.get(_codelist)
                         if not _codelist.startswith("CNEW"):
-                            _codelist_value = '=HYPERLINK("#{}!A2","{}")'.format(
+                            _codelist_value = '=HYPERLINK("#\'{}\'!A2","{}")'.format(
                                 _codelist, _codelist
                             )
                         else:

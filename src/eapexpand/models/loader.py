@@ -6,11 +6,11 @@ from .eap import (
     DataType,
     Document,
     Note,
-    Object,
+    ModelObject,
     Attribute,
     Connector,
-    ObjectProperty,
-    Package,
+    ModelObjectProperty,
+    ModelPackage,
     Class,
     Enumeration,
     State,
@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def load_packages(path: str) -> Dict[int, Package]:
+def load_packages(path: str) -> Dict[int, ModelPackage]:
     """
     Loads the packages from the EAP file
     """
@@ -34,7 +34,7 @@ def load_packages(path: str) -> Dict[int, Package]:
     assert (Path(path) / "t_package.json").exists(), f"Path is not a file: {path}"
     with open((Path(path) / "t_package.json"), "r") as f:
         for line in f:
-            _package = Package.from_json(line)
+            _package = ModelPackage.from_json(line)
             data[_package.id] = _package
     # bind parent packages
     _by_id = {x.package_id: x for x in data.values()}
@@ -85,7 +85,7 @@ def load_objects(path: str, prefix: str | None = None, name: str | None = None) 
                 _object = Note.from_json(line)
             elif _line["Object_Type"] == "Package":
                 # extract the package object metadata
-                _object = Package.from_json(line)
+                _object = ModelPackage.from_json(line)
                 _pkg = _package_metadata.get(_object.ea_guid)
                 # merge the package metadata
                 if _pkg:
@@ -100,7 +100,7 @@ def load_objects(path: str, prefix: str | None = None, name: str | None = None) 
     if (Path(path) / "t_objectproperties.json").exists():
         with open((Path(path) / "t_objectproperties.json"), "r") as f:
             for line in f:
-                _object = ObjectProperty.from_json(line)
+                _object = ModelObjectProperty.from_json(line)
                 data[_object.object_id].properties.append(_object)
     # assign attributes to objects
     if (Path(path) / "t_attribute.json").exists():
