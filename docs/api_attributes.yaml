@@ -16,10 +16,6 @@ addedAttributes:
       description: The biomedical concept surrogates used in the study design.
       type: BiomedicalConceptSurrogate
       multivalued: true
-    - name: conditions
-      description: The conditions of the study design.
-      type: Condition
-      multivalued: true
     - name: dictionaries
       description: The dictionaries used in the study design.
       type: SyntaxTemplateDictionary
