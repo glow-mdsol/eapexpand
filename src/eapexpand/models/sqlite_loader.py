@@ -26,9 +26,83 @@ from .eap import (
 )
 
 
+def _singularize(name: str) -> str:
+    if name.endswith("ies"):
+        return name[:-3] + "y"
+    if name.endswith("s") and not name.endswith("ss"):
+        return name[:-1]
+    return name
+
+
+def _pluralize(name: str) -> str:
+    if name.endswith("y"):
+        return name[:-1] + "ies"
+    if name.endswith("s"):
+        return name
+    return name + "s"
+
+
+def _openapi_id_props(api_metadata: dict, class_name: str) -> set[str]:
+    openapi_data = api_metadata.get("openapi", {})
+    return set(openapi_data.get("idPropertiesByClass", {}).get(class_name, []))
+
+
+def _resolve_api_attr_from_openapi(
+    api_metadata: dict, class_name: str, connector_name: str, multivalued: bool
+) -> str | None:
+    id_props = _openapi_id_props(api_metadata, class_name)
+    if not id_props:
+        return None
+
+    singular = _singularize(connector_name)
+    plural = _pluralize(singular)
+    ordered_candidates = []
+
+    if multivalued:
+        ordered_candidates.extend(
+            [
+                f"{connector_name}Ids",
+                f"{plural}Ids",
+                f"{singular}Ids",
+                f"{connector_name}Id",
+                f"{singular}Id",
+            ]
+        )
+    else:
+        ordered_candidates.extend(
+            [
+                f"{connector_name}Id",
+                f"{singular}Id",
+                f"{connector_name}Ids",
+                f"{singular}Ids",
+                f"{plural}Ids",
+            ]
+        )
+
+    for candidate in ordered_candidates:
+        if candidate in id_props:
+            return candidate
+    return None
+
+
+def _resolve_map_type_from_openapi(
+    api_metadata: dict, class_name: str, connector_name: str
+) -> str | None:
+    openapi_data = api_metadata.get("openapi", {})
+    class_map = openapi_data.get("aliasCodePropsByClass", {}).get(class_name, {})
+    return class_map.get(connector_name)
+
+
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
     return {key: value for key, value in zip(fields, row) if value is not None}
+
+
+def _find_attribute_by_name(source_object: ModelObject, name: str) -> Attribute | None:
+    for attr in source_object.object_attributes or []:
+        if attr.name == name:
+            return attr
+    return None
 
 
 def load_from_file(
@@ -139,32 +213,57 @@ def load_from_file(
         _target_object = data.get(_conn.end_object_id)
         assert _target_object, f"Connector {_conn.connector_id}: Target object not found: {_conn._target_object_id}"
         if api_metadata:
-            if api_metadata.get("apiAttributes", {}).get(_conn.name):
+            _api_attr_name = _resolve_api_attr_from_openapi(
+                api_metadata, _source_object.name, _conn.name, _conn.multivalued
+            )
+            if _api_attr_name is None and api_metadata.get("apiAttributes", {}).get(_conn.name):
                 _api_attr_spec = api_metadata["apiAttributes"][_conn.name]
                 
                 if "names" in _api_attr_spec:
                     if _conn.multivalued:
-                        _name = _api_attr_spec["names"]
+                        _api_attr_name = _api_attr_spec["names"]
                     else:
-                        _name = _api_attr_spec["name"]
+                        _api_attr_name = _api_attr_spec["name"]
                 else:
-                    _name = _api_attr_spec["name"]
-                # add an API attribute
-                _api_attr = Attribute(
-                    name=_name,
-                    attribute_type="String",
-                    preferred_term="API Attribute for " + _conn.name,
-                    definition="An API attribute added for " + _conn.name,
-                    lower_bound='0' if _conn.optional else '1',
-                    upper_bound='*' if _conn.multivalued else '1',
-                    pos=_attr.pos + 1000,
-                )
+                    _api_attr_name = _api_attr_spec["name"]
+            if _api_attr_name:
+                _existing_api_attr = _find_attribute_by_name(_source_object, _api_attr_name)
+                if _existing_api_attr is None:
+                    _max_pos = max(
+                        [attr.pos for attr in _source_object.object_attributes if attr.pos is not None],
+                        default=0,
+                    )
+                    # add a single API attribute for a connector name; union connectors
+                    # can resolve to the same API Id field and should not duplicate.
+                    _api_attr = Attribute(
+                        name=_api_attr_name,
+                        attribute_type="String",
+                        preferred_term="API Attribute for " + _conn.name,
+                        definition="An API attribute added for " + _conn.name,
+                        lower_bound='0' if _conn.optional else '1',
+                        upper_bound='*' if _conn.multivalued else '1',
+                        pos=_max_pos + 1,
+                    )
+                    _source_object.object_attributes.append(_api_attr)
+                else:
+                    # If any mapped connector is optional/multivalued, widen the existing
+                    # generated API attribute cardinality accordingly.
+                    if _conn.optional:
+                        _existing_api_attr.lower_bound = "0"
+                    if _conn.multivalued:
+                        _existing_api_attr.upper_bound = "*"
                 _conn.optional = True
-                # print("Adding API attribute", _api_attr.name, "for", _conn.name, "with cardinality", _conn.dest_card)
-                _source_object.object_attributes.append(_api_attr)
-            elif api_metadata.get("mapTypes"):
-                if _conn.name in api_metadata["mapTypes"]:
-                    _conn.aliased_type = api_metadata["mapTypes"][_conn.name]["type"]
+            else:
+                _yaml_type = None
+                if api_metadata.get("mapTypes") and _conn.name in api_metadata["mapTypes"]:
+                    _yaml_type = api_metadata["mapTypes"][_conn.name]["type"]
+                _openapi_type = _resolve_map_type_from_openapi(
+                    api_metadata, _source_object.name, _conn.name
+                )
+                if _yaml_type:
+                    _conn.aliased_type = _yaml_type
+                elif _openapi_type:
+                    _conn.aliased_type = _openapi_type
                                   
         if _source_object and _target_object:
             if _conn.connector_type == "Association":

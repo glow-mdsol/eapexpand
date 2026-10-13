@@ -2,8 +2,7 @@ import os
 from typing import Dict, Optional
 from eapexpand.models.eap import Attribute, Connector, Document, ModelObject
 
-from openpyxl import load_workbook, Workbook
-from openpyxl.cell.cell import Cell
+from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
 import logging
@@ -22,7 +21,56 @@ HEADERS = [
     "Definition",
     "Codelist",
     "External Codelist",
+    "Codelist Extensible",
 ]
+
+
+def _parse_cardinality(value: Optional[str]) -> tuple[Optional[int], Optional[str]]:
+    if not value:
+        return None, None
+    text = value.strip()
+    if ".." in text:
+        lower_raw, upper_raw = text.split("..", 1)
+        lower = int(lower_raw) if lower_raw.isdigit() else None
+        upper = "*" if upper_raw == "*" else (upper_raw if upper_raw.isdigit() else None)
+        return lower, upper
+    if text == "*":
+        return None, "*"
+    if text.isdigit():
+        number = int(text)
+        return number, str(number)
+    return None, None
+
+
+def _merge_cardinality(existing: Optional[str], incoming: Optional[str]) -> Optional[str]:
+    if not existing:
+        return incoming
+    if not incoming or existing == incoming:
+        return existing
+
+    e_low, e_high = _parse_cardinality(existing)
+    i_low, i_high = _parse_cardinality(incoming)
+    if e_low is None or e_high is None or i_low is None or i_high is None:
+        return existing
+
+    lower = min(e_low, i_low)
+    if e_high == "*" or i_high == "*":
+        upper = "*"
+    else:
+        upper = str(max(int(e_high), int(i_high)))
+    return f"{lower}..{upper}"
+
+
+def _merge_pipe_type(existing: Optional[str], incoming: Optional[str]) -> str:
+    values = []
+    for value in [existing, incoming]:
+        if not value:
+            continue
+        for part in str(value).split("|"):
+            part = part.strip()
+            if part and part not in values:
+                values.append(part)
+    return "|".join(values)
 
 
 def generate(
@@ -162,6 +210,9 @@ def generate(
                                         print(f"  → External codelist: {_attr_ref.external_code_list}")
                                     elif _attr_ref.codelist_code:
                                         attrib["codelist"] = _attr_ref.codelist_code
+                                        _cl = codelists.get(_attr_ref.codelist_code)
+                                        if _cl is not None:
+                                            attrib["codelist_extensible"] = "Yes" if _cl.extensible else "No"
                                         print(f"  → Internal codelist: {_attr_ref.codelist_code}")
                             else:
                                 missing = (_ct_reference.entity_name, _attribute.name)
@@ -177,11 +228,12 @@ def generate(
                         "Adding connection ", outgoing_connection.name, " to ", obj.name
                     )
                     outgoing_connection: Connector
+                    _target_name = document.get_object(
+                        outgoing_connection.end_object_id
+                    ).name
                     attrib = dict(
                         attribute_name=outgoing_connection.name,
-                        attribute_type=document.get_object(
-                            outgoing_connection.end_object_id
-                        ).name,
+                        attribute_type=_target_name,
                         attribute_cardinality=outgoing_connection.dest_card,
                         attribute_note=None,
                     )
@@ -199,12 +251,38 @@ def generate(
                                 print(f"  → External codelist: {_attr_ref.external_code_list}")
                             elif _attr_ref.codelist_code:
                                 attrib["codelist"] = _attr_ref.codelist_code
+                                _cl = codelists.get(_attr_ref.codelist_code)
+                                if _cl is not None:
+                                    attrib["codelist_extensible"] = "Yes" if _cl.extensible else "No"
                                 print(f"  → Internal codelist: {_attr_ref.codelist_code}")
                     else:
                         missing = (_ct_reference.entity_name, outgoing_connection.name)
                         if missing not in missing_references.get("connections"):
                             missing_references["connections"].append(missing)
-                    _output[attrib.get("attribute_name")] = attrib
+                    existing = _output.get(attrib.get("attribute_name"))
+                    if existing:
+                        existing["attribute_type"] = _merge_pipe_type(
+                            existing.get("attribute_type"), attrib.get("attribute_type")
+                        )
+                        existing["attribute_cardinality"] = _merge_cardinality(
+                            existing.get("attribute_cardinality"),
+                            attrib.get("attribute_cardinality"),
+                        )
+                        if not existing.get("definition") and attrib.get("definition"):
+                            existing["definition"] = attrib.get("definition")
+                        if not existing.get("c_code") and attrib.get("c_code"):
+                            existing["c_code"] = attrib.get("c_code")
+                        if not existing.get("pref_term") and attrib.get("pref_term"):
+                            existing["pref_term"] = attrib.get("pref_term")
+                        if not existing.get("codelist") and attrib.get("codelist"):
+                            existing["codelist"] = attrib.get("codelist")
+                        if not existing.get("external_value_list") and attrib.get("external_value_list"):
+                            existing["external_value_list"] = attrib.get("external_value_list")
+                        if not existing.get("codelist_extensible") and attrib.get("codelist_extensible"):
+                            existing["codelist_extensible"] = attrib.get("codelist_extensible")
+                        _output[attrib.get("attribute_name")] = existing
+                    else:
+                        _output[attrib.get("attribute_name")] = attrib
                 # connections = [
                 #     connectors[cid]
                 #     for cid in connectors
@@ -267,6 +345,12 @@ def generate(
                         row=row_num,
                         column=10,
                         value=attrib.get("external_value_list", ""),
+                    )
+                    write_cell(
+                        sheet,
+                        row=row_num,
+                        column=11,
+                        value=attrib.get("codelist_extensible", ""),
                     )
                     row_num += 1
     for c_code, _codelist in codelists.items():

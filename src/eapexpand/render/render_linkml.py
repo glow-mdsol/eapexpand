@@ -1,10 +1,8 @@
 from typing import Optional, List, Union
 import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import re
 import yaml
-from linkml.utils.schema_builder import (
+from linkml_runtime.utils.schema_builder import (
     SchemaBuilder,
     ClassDefinition,
     EnumDefinition,
@@ -13,7 +11,9 @@ from linkml.utils.schema_builder import (
 )
 import inflect
 from ..models.eap import Attribute, Connector, Document
-from ..models.usdm_ct import CodeList
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 IDENTIFIER_TYPES = ["id", "uuid"]
 
@@ -26,6 +26,135 @@ TYPE_MAPPING = {
     "Float": "float",
     "Date": "date",
 }
+
+
+def _to_snake_case(name: str) -> str:
+    """
+    Convert mixed/camel/Pascal-case names into LinkML-friendly snake_case.
+    """
+    if not name:
+        return name
+    normalized = re.sub(r"[^A-Za-z0-9]+", "_", name)
+    normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", normalized)
+    normalized = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", normalized)
+    normalized = re.sub(r"_+", "_", normalized).strip("_")
+    return normalized.lower()
+
+
+def _apply_codelist_slot_usage(schema: dict, codelist_constraints: dict) -> dict:
+    """
+    Post-process schema to apply slot_usage constraints for terminology codelists.
+    
+    For slots with corresponding terminology enums, adds slot_usage range
+    constraints to the enum.
+    
+        Pattern:
+            classes:
+                MyClass:
+                    slots:
+                        - myCode
+                    slot_usage:
+                        myCode:
+                            range: MyCodelistEnum
+    """
+    classes = schema.get("classes", {})
+
+    for class_name, slot_constraints in codelist_constraints.items():
+        class_def = classes.get(class_name)
+        if not isinstance(class_def, dict):
+            continue
+
+        slot_usage = class_def.get("slot_usage", {})
+        for slot_name, enum_name in slot_constraints.items():
+            slot_name = str(slot_name)
+            logger.info(
+                f"Adding slot_usage constraint: {class_name}.{slot_name} -> {enum_name}"
+            )
+            slot_usage[slot_name] = {
+                "range": enum_name,
+            }
+
+        if slot_usage:
+            class_def["slot_usage"] = slot_usage
+
+    return schema
+
+
+def _apply_enum_extensibility(schema: dict, enum_extensibility: dict[str, bool]) -> dict:
+    """
+    Add explicit extensibility metadata to generated enums.
+
+    The extensibility flag originates from USDM CT codelists and is materialized
+    as LinkML enum annotations for downstream tooling.
+    """
+    enums = schema.get("enums", {})
+    for enum_name, is_extensible in enum_extensibility.items():
+        if enum_name not in enums:
+            continue
+        enum_def = enums.get(enum_name)
+        if not isinstance(enum_def, dict):
+            continue
+        annotations = enum_def.get("annotations", {})
+        annotations["extensible"] = {
+            "tag": "extensible",
+            "value": is_extensible,
+        }
+        enum_def["annotations"] = annotations
+    return schema
+
+
+def _merge_slot_definitions(existing: SlotDefinition, incoming: SlotDefinition) -> SlotDefinition:
+    """
+    Merge two same-name slots, preserving a single slot and widening it for unions.
+    """
+    existing_ranges = set()
+    if existing.range:
+        existing_ranges.add(str(existing.range))
+    for option in existing.any_of or []:
+        if isinstance(option, dict) and option.get("range"):
+            existing_ranges.add(str(option["range"]))
+
+    incoming_ranges = set()
+    if incoming.range:
+        incoming_ranges.add(str(incoming.range))
+    for option in incoming.any_of or []:
+        if isinstance(option, dict) and option.get("range"):
+            incoming_ranges.add(str(option["range"]))
+
+    all_ranges = sorted(existing_ranges | incoming_ranges)
+    if len(all_ranges) == 1:
+        existing.range = all_ranges[0]
+        existing.any_of = None
+    elif len(all_ranges) > 1:
+        existing.range = None
+        existing.any_of = [{"range": range_name} for range_name in all_ranges]
+
+    existing_required = bool(existing.required)
+    incoming_required = bool(incoming.required)
+    existing.required = existing_required and incoming_required
+
+    existing.multivalued = bool(existing.multivalued) or bool(incoming.multivalued)
+    if existing.multivalued:
+        existing.inlined_as_list = True
+        existing.inlined = False
+    elif incoming.inlined:
+        existing.inlined = True
+
+    if not existing.description and incoming.description:
+        existing.description = incoming.description
+    if not existing.definition_uri and incoming.definition_uri:
+        existing.definition_uri = incoming.definition_uri
+    if not existing.title and incoming.title:
+        existing.title = incoming.title
+
+    existing_aliases = list(existing.aliases or [])
+    for alias in incoming.aliases or []:
+        if alias not in existing_aliases:
+            existing_aliases.append(alias)
+    if existing_aliases:
+        existing.aliases = existing_aliases
+
+    return existing
 
 
 def generate_schema_builder(
@@ -77,7 +206,7 @@ def generate_schema_builder(
     else:
         logger.warning("No schema_id or document prefix provided, using default.")
         _id = f"https://example.org/{name}"
-    p = inflect.engine()
+    inflect.engine()
     sb = SchemaBuilder(name, id=_id)
     # sb.description = document.description
     # add default elements
@@ -102,21 +231,24 @@ def generate_schema_builder(
                 description="USDM Study Definition",
             ),
             SlotDefinition(
-                name="usdmVersion",
+                name="usdm_version",
                 range="string",
                 required=True,
+                aliases=["usdmVersion"],
                 description="Version of the USDM message",
             ),
             SlotDefinition(
-                name="systemVersion",
+                name="system_version",
                 range="string",
                 required=True,
+                aliases=["systemVersion"],
                 description="Version of the System that generated the USDM message",
             ),
             SlotDefinition(
-                name="systemName",
+                name="system_name",
                 range="string",
                 required=True,
+                aliases=["systemName"],
                 description="Name of the System that generated the USDM message",
             ),
         ],
@@ -140,15 +272,17 @@ def generate_schema_builder(
                 description="The literal value of a code.",
             ),
             SlotDefinition(
-                name="codeSystem",
+                name="code_system",
                 range="string",
                 required=True,
+                aliases=["codeSystem"],
                 description="The literal identifier (i.e., distinctive designation) of the system used to assign and/or manage codes.",
             ),
             SlotDefinition(
-                name="codeSystemVersion",
+                name="code_system_version",
                 range="string",
                 required=True,
+                aliases=["codeSystemVersion"],
                 description="The version of the code system.",
             ),
             SlotDefinition(
@@ -173,9 +307,11 @@ def generate_schema_builder(
                 description="One or more characters used to identify, name, or characterize the nature, properties, or contents of a thing.",
             ),
             SlotDefinition(
-                name="standardCodeAliases",
+                name="standard_code_aliases",
                 range="Code",
                 multivalued=True,
+                minimum_cardinality=1,
+                aliases=["standardCodeAliases"],
                 description="Other terms by which the standard code is known",
             ),
         ],
@@ -212,34 +348,39 @@ def generate_schema_builder(
                 required=True,
             ),
             SlotDefinition(
-                name="resultType",
+                name="result_type",
                 description="Type of Result (WARNING/ERROR)",
                 range="string",
                 required=True,
+                aliases=["resultType"],
             ),
             SlotDefinition(
-                name="targetEntities",
+                name="target_entities",
                 description="Entities to which this rule applies",
                 range="string",
                 minimum_cardinality=0,
+                aliases=["targetEntities"],
             ),
             SlotDefinition(
-                name="targetAttributes",
+                name="target_attributes",
                 description="Entity attributes to which this rule applies",
                 range="string",
                 minimum_cardinality=0,
+                aliases=["targetAttributes"],
             ),
             SlotDefinition(
-                name="coreRuleId",
+                name="core_rule_id",
                 description="CORE Rule Identifier",
                 range="string",
                 required=True,
+                aliases=["coreRuleId"],
             ),
             SlotDefinition(
-                name="checkId",
+                name="check_id",
                 description="Check Identifier",
                 range="string",
                 required=True,
+                aliases=["checkId"],
             ),
         ],
         use_attributes=True,
@@ -253,19 +394,21 @@ def generate_schema_builder(
         base,
         slots=[
             SlotDefinition(
-                name="instanceType",
+                name="instance_type",
                 range="string",
                 description="API attribute to identify the class type",
                 multivalued=False,
                 inlined=True,
+                aliases=["instanceType"],
             ),
             SlotDefinition(
-                name="extensionAttributes",
+                name="extension_attributes",
                 range="ExtensionAttribute",
                 description="Extension attributes for this instance",
                 multivalued=True,
                 inlined=True,
                 required=False,
+                aliases=["extensionAttributes"],
             ),
             SlotDefinition(
                 name="rules",
@@ -289,10 +432,13 @@ def generate_schema_builder(
         multivalued=False,
         inlined=True)
     sb.add_slot(_id)
+    codelist_constraints = {}
+    enum_extensibility = {}
     for obj in document.objects:
         if obj.object_type == "Class":
             # holder for extra attrs
-            _class = ClassDefinition(obj.name, mixins=["Base"])  # type: ClassDefinition
+            _class_name = obj.name
+            _class = ClassDefinition(_class_name, mixins=["Base"])  # type: ClassDefinition
             if obj.description:
                 _class.description = obj.description
             if obj.reference_url:
@@ -315,8 +461,10 @@ def generate_schema_builder(
             if obj.synonyms:
                 _class.aliases = obj.synonyms
             # add the classes as datatypes
-            TYPE_MAPPING[obj.name] = obj.name
+            TYPE_MAPPING[_class_name] = _class_name
             _attributes: List[SlotDefinition] = []
+            _attribute_index = {}
+            class_slot_constraints = {}
             for attr in obj.all_attributes:
                 if attr.name in IDENTIFIER_TYPES:
                     logger.info(f"Adding identifier for {attr.name}")
@@ -331,14 +479,30 @@ def generate_schema_builder(
                 # if attr.name == "name":
                 #     print(f"Adding attribute {obj.name}.{attr.name}")
                 # name is protected in schemabuilder
+                source_attribute_name = attr.name
                 if attr.name == "name":
                     # attribute name where "name" gets blitzed
-                    _name = obj.name.lower() + attr.name.capitalize()
-                    _attr = SlotDefinition(
-                        name=_name, aliases=["name"], required=False, multivalued=False
-                    )  # eg protocolVersion
+                    source_slot_name = f"{obj.name}{attr.name.capitalize()}"
                 else:
-                    _attr = SlotDefinition(name=attr.name)
+                    source_slot_name = str(attr.name)
+
+                canonical_slot_name = _to_snake_case(source_slot_name)
+                _attr = SlotDefinition(name=canonical_slot_name)
+                if source_attribute_name and source_attribute_name != canonical_slot_name:
+                    aliases = list(_attr.aliases or [])
+                    if source_attribute_name not in aliases:
+                        aliases.append(source_attribute_name)
+                    _attr.aliases = aliases
+                _attr.annotations = {
+                    "source_attribute_name": {
+                        "tag": "source_attribute_name",
+                        "value": str(source_attribute_name),
+                    },
+                    "source_slot_name": {
+                        "tag": "source_slot_name",
+                        "value": str(source_slot_name),
+                    },
+                }
                 if attr.reference_url:
                     if attr.reference_url.startswith("http"):
                         _attr.definition_uri = attr.reference_url
@@ -467,34 +631,22 @@ def generate_schema_builder(
                                     _pv.description = pv.definition
                                 _enum.permissible_values[_pv.text] = _pv
                         sb.add_enum(_enum)
+                    enum_extensibility[_codelist_name] = bool(_codelist.extensible)
+                    # Use cleaner slot_usage pattern instead of wrapper classes
+                    # Store enum constraint info for post-processing
+                    logger.info(f"Adding codelist constraint for {_codelist_name}")
                     if attr.attribute_type == "AliasCode":
-                        logger.info(f"Adding AliasCode for {_codelist_name}")
-                        # need to create an AliasCode
-                        # attributes:
-                        # id: string
-                        # standard_code: Code
-                        # standard_code_aliases: List[Code]
-                        _cd = ClassDefinition(
-                            f"{_codelist_name}AliasCode", is_a="AliasCode"
-                        )
-                        _cd.description = f"An alias for a {_codelist_name} code"
-                        sb.add_class(
-                            _cd,
-                            slots=[
-                                SlotDefinition(
-                                    name="standardCode",
-                                    range=f"{_codelist_name}",
-                                    required=True,
-                                    description="The standard code",
-                                ),
-                            ],
-                            use_attributes=True,
-                        )
-                        _attr.range = f"{_codelist_name}AliasCode"
+                        _attr.range = "Code"
+                        class_slot_constraints[str(_attr.name)] = _codelist_name
                     else:
-                        logger.info(f"Adding Code for {_codelist_name}")
+                        # Direct enum range (for non-AliasCode codelists)
                         _attr.range = _codelist_name
-                _attributes.append(_attr)
+                _slot_name = str(_attr.name)
+                if _slot_name in _attribute_index:
+                    _merge_slot_definitions(_attribute_index[_slot_name], _attr)
+                else:
+                    _attributes.append(_attr)
+                    _attribute_index[_slot_name] = _attr
                 # if _attr.name == "name":
                 #     print("Adding name attribute")
                 #     _attr.aliases = ["name"]
@@ -503,8 +655,24 @@ def generate_schema_builder(
                 #     ] = _attr
                 # else:
                 # _class.attributes[_attr.name] = _attr
-            _class.attributes = _attributes
-            sb.add_class(_class)
+            _class.attributes = _attribute_index
+            if _class_name in sb.schema.classes:
+                existing_class = sb.schema.classes[_class_name]
+                existing_attributes = existing_class.attributes or {}
+                for slot_name, slot_def in _attribute_index.items():
+                    if slot_name in existing_attributes:
+                        _merge_slot_definitions(existing_attributes[slot_name], slot_def)
+                    else:
+                        existing_attributes[slot_name] = slot_def
+                existing_class.attributes = existing_attributes
+                if _class.slots:
+                    existing_slots = list(existing_class.slots or [])
+                    existing_class.slots = list(dict.fromkeys(existing_slots + list(_class.slots)))
+            else:
+                sb.add_class(_class)
+            if class_slot_constraints:
+                merged_constraints = codelist_constraints.setdefault(_class_name, {})
+                merged_constraints.update(class_slot_constraints)
     if "Map" in set(_missing_types) - set(TYPE_MAPPING.keys()):
         print("Adding Map type")
         # add a map class
@@ -519,6 +687,11 @@ def generate_schema_builder(
         print("Missing type:", absent_type)
     print("Writing model to", output_dir)
     _schema = sb.as_dict()
+    
+    # Post-process schema to apply slot_usage constraints for codelists
+    _schema = _apply_codelist_slot_usage(_schema, codelist_constraints)
+    _schema = _apply_enum_extensibility(_schema, enum_extensibility)
+    
     # add the description, not available for builder
     _schema["description"] = document.description
     if document.version:
