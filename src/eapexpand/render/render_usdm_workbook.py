@@ -22,6 +22,7 @@ HEADERS = [
     "Codelist",
     "External Codelist",
     "Codelist Extensible",
+    "Inherited",
 ]
 
 
@@ -184,18 +185,16 @@ def generate(
                     attrib = _output.setdefault(_attribute.name, {})
                     if not attrib:
                         # add a reference to show that the attribute is inherited from the generalization
-                        if (
+                        is_inherited = bool(
                             _generalization
                             and _attribute in _generalization.object_attributes
-                        ):
-                            _name = "* " + _attribute.name
-                        else:
-                            _name = _attribute.name
+                        )
                         attrib = dict(
-                            attribute_name=_name,
+                            attribute_name=_attribute.name,
                             attribute_type=_attribute.attribute_type,
                             attribute_cardinality=_attribute.cardinality,
                             attribute_note=_attribute.description,
+                            inherited="Y" if is_inherited else "",
                         )
                         if _ct_reference:
                             _attr_ref = _ct_reference.get_attribute(_attribute.name)
@@ -351,6 +350,9 @@ def generate(
                         row=row_num,
                         column=11,
                         value=attrib.get("codelist_extensible", ""),
+                    )
+                    write_cell(
+                        sheet, row=row_num, column=12, value=attrib.get("inherited", "")
                     )
                     row_num += 1
     for c_code, _codelist in codelists.items():
