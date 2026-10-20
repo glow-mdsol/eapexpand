@@ -255,7 +255,7 @@ def generate_schema_builder(
         use_attributes=True,
     )
     # need this for the AliasCode
-    code = ClassDefinition("Code", description="A USDM Code Reference")
+    code = ClassDefinition("Code", description="A USDM Code Reference", mixins=["Base"])
     sb.add_class(
         code,
         slots=[
@@ -406,7 +406,7 @@ def generate_schema_builder(
                 range="ExtensionAttribute",
                 description="Extension attributes for this instance",
                 multivalued=True,
-                inlined=True,
+                inlined_as_list=True,
                 required=False,
                 aliases=["extensionAttributes"],
             ),
