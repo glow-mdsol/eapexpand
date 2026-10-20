@@ -11316,6 +11316,8 @@ classes:
     description: A symbol or combination of symbols which is assigned to the members
       of a collection.
     title: Code
+    mixins:
+    - Base
     attributes:
       id:
         definition_uri: ncit:C25364
@@ -11488,6 +11490,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   StudyVersion:
     definition_uri: ncit:C188816
     description: A plan at a particular point in time for a study.
@@ -11693,6 +11697,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   Identifier:
     definition_uri: ncit:C25364
     description: One or more characters used to identify, name, or characterize the
@@ -11736,6 +11742,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Organization:
     definition_uri: ncit:C19711
     description: A formalized group of persons or other organizations collected together
@@ -11817,6 +11825,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   Address:
     definition_uri: ncit:C25407
     description: A standardized representation of the location of a person, business,
@@ -11893,6 +11903,8 @@ classes:
         range: Code
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   CDISCSDTMTrialPhaseTerminologyAliasCode:
     description: An alias for a CDISCSDTMTrialPhaseTerminology code
     is_a: AliasCode
@@ -11911,6 +11923,7 @@ classes:
     mixins:
       - ObservationalStudyDesign
       - InterventionalStudyDesign
+      - Base
     attributes:
       id:
         definition_uri: ncit:C25364
@@ -12293,6 +12306,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   StudyCell:
     definition_uri: ncit:C188810
     description: A partitioning of a study arm into individual pieces, which are associated
@@ -12354,6 +12369,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   StudyEpoch:
     definition_uri: ncit:C71738
     description: A named time period defined in the protocol, wherein a study activity
@@ -12445,6 +12462,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   StudyElement:
     definition_uri: ncit:C142735
     description: 'A basic building block for time within a clinical study comprising
@@ -12528,6 +12547,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   TransitionRule:
     definition_uri: ncit:C82567
     description: A guide that governs the allocation of subjects to operational options
@@ -12582,6 +12603,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Encounter:
     definition_uri: ncit:C215488
     description: Any physical or virtual contact between two or more parties involved
@@ -12712,6 +12735,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   ScheduleTimeline:
     definition_uri: ncit:C201348
     description: A chronological schedule of planned temporal events.
@@ -12825,6 +12850,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   ScheduledInstance:
     definition_uri: ncit:C201299
     description: A scheduled occurrence of a temporal event.
@@ -12898,6 +12925,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   ScheduledDecisionInstance:
     definition_uri: ncit:C201351
     description: A scheduled occurrence of a decision event.
@@ -12912,6 +12941,8 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   ScheduledActivityInstance:
     definition_uri: ncit:C201350
     description: A scheduled occurrence of an activity event.
@@ -12974,6 +13005,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   ScheduleTimelineExit:
     definition_uri: ncit:C201349
     description: To go out of or leave the schedule timeline.
@@ -12992,6 +13025,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Activity:
     definition_uri: ncit:C71473
     description: An action, undertaking, or event, which is anticipated to be performed
@@ -13146,6 +13181,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   Procedure:
     definition_uri: ncit:C98769
     description: Any activity performed by manual and/or instrumental means for the
@@ -13228,6 +13265,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   BiomedicalConceptSurrogate:
     definition_uri: ncit:C207590
     description: A concept that substitutes for a standard biomedical concept from
@@ -13288,6 +13327,8 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   BiomedicalConceptCategory:
     definition_uri: ncit:C201346
     description: A grouping of biomedical concepts based on some commonality or by
@@ -13375,6 +13416,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   BiomedicalConcept:
     definition_uri: ncit:C201345
     description: A unit of biomedical knowledge created from a unique combination
@@ -13454,6 +13497,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   BiomedicalConceptProperty:
     definition_uri: ncit:C202493
     description: A characteristic from a set of characteristics used to define a biomedical
@@ -13544,6 +13589,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   ResponseCode:
     definition_uri: ncit:C201347
     description: A symbol or combination of symbols representing the response to the
@@ -13598,6 +13645,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Timing:
     definition_uri: ncit:C80484
     description: The chronological relationship between temporal events.
@@ -13738,6 +13787,8 @@ classes:
         - range: ScheduledInstance
         - range: ScheduledDecisionInstance
         - range: ScheduledActivityInstance
+    mixins:
+    - Base
   Indication:
     definition_uri: ncit:C41184
     description: The disease or condition the intervention will diagnose, treat, prevent,
@@ -13807,6 +13858,8 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   StudyIntervention:
     definition_uri: ncit:C207649
     description: Any agent, device, or procedure being tested or used as a reference
@@ -13905,6 +13958,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   Estimand:
     definition_uri: ncit:C188813
     description: A precise description of the treatment effect reflecting the clinical
@@ -14020,6 +14075,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   NarrativeContent:
     definition_uri: ncit:C207592
     description: The container that holds an instance of unstructured text and which
@@ -14139,6 +14196,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   PopulationDefinition:
     definition_uri: ncit:C207593
     description: A concise explanation of the meaning of a population.
@@ -14248,6 +14307,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   Objective:
     definition_uri: ncit:C142450
     description: The reason for performing a study in terms of the scientific questions
@@ -14271,6 +14332,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   Endpoint:
     definition_uri: ncit:C25212
     description: 'A defined variable intended to reflect an outcome of interest that
@@ -14299,6 +14362,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   AnalysisPopulation:
     definition_uri: ncit:C188814
     description: A target study population on which an analysis is performed. These
@@ -14379,6 +14444,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   IntercurrentEvent:
     definition_uri: ncit:C188815
     description: An event(s) occurring after treatment initiation that affects either
@@ -14396,6 +14463,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   EligibilityCriterion:
     definition_uri: ncit:C16112
     description: Characteristics which are necessary to allow a subject to participate
@@ -14519,6 +14588,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   SyntaxTemplate:
     definition_uri: ncit:C207596
     description: A standardized pattern used for the arrangement of words and phrases
@@ -14593,6 +14664,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   SyntaxTemplateDictionary:
     definition_uri: ncit:C207597
     description: A reference source that provides a listing of valid parameter names
@@ -14645,6 +14718,8 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   GovernanceDate:
     definition_uri: ncit:C207595
     description: Any of the dates associated with event milestones within a clinical
@@ -14714,6 +14789,8 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   StudyDefinitionDocument:
     definition_uri: ncit:C215490
     description: Any physical or electronic document that is related to defining a
@@ -14812,6 +14889,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   Study:
     definition_uri: ncit:C15206
     description: 'A clinical study involves research using human volunteers (also
@@ -14872,6 +14951,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   StudyAmendment:
     definition_uri: ncit:C207594
     description: A written description of a change(s) to, or formal clarification
@@ -15009,6 +15090,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   StudyAmendmentReason:
     definition_uri: ncit:C207457
     description: The rationale for the change(s) to, or formal clarification of, a
@@ -15049,6 +15132,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   GeographicScope:
     definition_uri: ncit:C207591
     description: The extent or range related to the physical location of an entity.
@@ -15083,6 +15168,8 @@ classes:
         range: AliasCode
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   SubjectEnrollment:
     definition_uri: ncit:C37948
     description: The act of enrolling subjects into a study. The subject will have
@@ -15179,6 +15266,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   CDISCSDTMUnitofMeasureTerminologyAliasCode:
     description: An alias for a CDISCSDTMUnitofMeasureTerminology code
     is_a: AliasCode
@@ -15221,6 +15310,8 @@ classes:
         range: CDISCSDTMUnitofMeasureTerminologyAliasCode
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Duration:
     definition_uri: ncit:C25330
     description: The length of time during which something continues.
@@ -15271,6 +15362,8 @@ classes:
         range: string
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   CDISCSDTMFrequencyTerminologyAliasCode:
     description: An alias for a CDISCSDTMFrequencyTerminology code
     is_a: AliasCode
@@ -15404,6 +15497,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   StudyDesignPopulation:
     definition_uri: ncit:C142728
     description: The population within the general population to which the study results
@@ -15419,6 +15514,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   StudyCohort:
     definition_uri: ncit:C61512
     description: A group of individuals who share a set of characteristics (e.g.,
@@ -15448,11 +15545,15 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   Characteristic:
     definition_uri: ncit:C25447
     description: The distinguishing qualities or prominent aspects of an entity.
     title: Characteristic
     is_a: SyntaxTemplate
+    mixins:
+    - Base
   Range:
     definition_uri: ncit:C38013
     description: An expression that defines the lower and upper limits of a variation.
@@ -15493,6 +15594,8 @@ classes:
         range: boolean
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   StudyTitle:
     definition_uri: ncit:C49802
     description: The sponsor-defined name of the clinical study.
@@ -15531,6 +15634,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Condition:
     definition_uri: ncit:C25457
     description: A state of being.
@@ -15569,6 +15674,8 @@ classes:
         - range: ScheduledInstance
         - range: ScheduledDecisionInstance
         - range: ScheduledActivityInstance
+    mixins:
+    - Base
   StudySite:
     definition_uri: ncit:C80403
     description: The location at which a study investigator conducts study activities.
@@ -15620,6 +15727,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Masking:
     definition_uri: ncit:C191278
     description: The mechanism used to obscure the distinctive characteristics of
@@ -15657,6 +15766,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   ConditionAssignment:
     definition_uri: ncit:C201335
     description: An allotting or appointment to a condition or set of conditions that
@@ -15703,6 +15814,8 @@ classes:
         - range: ScheduledInstance
         - range: ScheduledDecisionInstance
         - range: ScheduledActivityInstance
+    mixins:
+    - Base
   ParameterMap:
     definition_uri: ncit:C207456
     description: The paired name and value for a given parameter.
@@ -15739,6 +15852,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   CommentAnnotation:
     definition_uri: ncit:C44272
     description: An explanatory or critical comment, or other in-context information
@@ -15776,6 +15891,8 @@ classes:
         range: Code
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   NarrativeContentItem:
     definition_uri: ncit:C215489
     description: An individual item within the container that holds an instance of
@@ -15816,6 +15933,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Abbreviation:
     definition_uri: ncit:C42610
     description: A set of letters that are drawn from a word or from a sequence of
@@ -15860,6 +15979,8 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   ReferenceIdentifier:
     definition_uri: ncit:C82531
     description: A sequence of characters used to identify, name, or characterize
@@ -15875,12 +15996,16 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   StudyIdentifier:
     definition_uri: ncit:C83082
     description: A sequence of characters used to identify, name, or characterize
       the study.
     title: Study Identifier
     is_a: Identifier
+    mixins:
+    - Base
   CDISCSDTMDosageFormTerminologyAliasCode:
     description: An alias for a CDISCSDTMDosageFormTerminology code
     is_a: AliasCode
@@ -15997,6 +16122,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   Substance:
     definition_uri: ncit:C45306
     description: Any matter of defined composition that has discrete existence, whose
@@ -16063,6 +16190,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Strength:
     definition_uri: ncit:C215495
     description: The content of an substance expressed quantitatively per dosage unit,
@@ -16123,12 +16252,16 @@ classes:
         range: Quantity
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   AdministrableProductIdentifier:
     definition_uri: ncit:C215493
     description: A sequence of characters used to identify, name, or characterize
       the administrable product.
     title: Administrable Product Identifier
     is_a: Identifier
+    mixins:
+    - Base
   AdministrableProductProperty:
     definition_uri: ncit:C215494
     description: A characteristic from a set of characteristics used to define an
@@ -16184,6 +16317,8 @@ classes:
         range: Quantity
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   Ingredient:
     definition_uri: ncit:C51981
     description: Any component that constitutes a part of a compounded substance or
@@ -16219,6 +16354,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   StudyRole:
     definition_uri: ncit:C215497
     description: A designation that identifies the function of study personnel or
@@ -16327,6 +16464,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   AssignedPerson:
     definition_uri: ncit:C215496
     description: An individual person who is allotted or appointed to a particular
@@ -16405,6 +16544,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   StudyChange:
     definition_uri: ncit:C215498
     description: The act of alteration or modification to a study.
@@ -16474,6 +16615,8 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   StudyAmendmentImpact:
     definition_uri: ncit:C215500
     description: The effect or consequence of an amendment on some aspect of the study.
@@ -16525,6 +16668,8 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   DocumentContentReference:
     definition_uri: ncit:C215499
     description: A citation pointing to the location of specific content within a
@@ -16577,6 +16722,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   MedicalDevice:
     definition_uri: ncit:C16830
     description: Any instrument, apparatus, implement, machine, appliance, implant,
@@ -16677,6 +16824,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   MedicalDeviceIdentifier:
     definition_uri: ncit:C215501
     description: A sequence of characters used to identify, name, or characterize
@@ -16692,6 +16841,8 @@ classes:
         required: true
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   ProductOrganizationRole:
     definition_uri: ncit:C215502
     description: A designation that identifies the function of an organization within
@@ -16775,6 +16926,8 @@ classes:
         required: false
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   CDISCSDTMTrialBlindingSchemaTerminologyAliasCode:
     description: An alias for a CDISCSDTMTrialBlindingSchemaTerminology code
     is_a: AliasCode
@@ -16837,6 +16990,8 @@ classes:
         range: CDISCSDTMTrialIndicationTypeTerminology
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   ObservationalStudyDesign:
     definition_uri: ncit:C215504
     description: The strategy that specifies the structure of an observational study
@@ -16879,6 +17034,8 @@ classes:
         range: CDISCSDTMObservationalStudySamplingMethodTerminology
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   BiospecimenRetention:
     definition_uri: ncit:C215505
     description: The continued possession, cataloging, and storage of collected biological
@@ -16942,12 +17099,16 @@ classes:
         range: boolean
         multivalued: false
         inlined: true
+    mixins:
+    - Base
   EligibilityCriterionItem:
     definition_uri: ncit:C215506
     description: An individual item within the container that holds an instance of
       an eligibility criterion.
     title: Eligibility Criterion Item
     is_a: SyntaxTemplate
+    mixins:
+    - Base
   ExtensionClass:
     title: Extension Class 
     description: Class to allow incorporation of extension of the Core USDM model
@@ -16976,6 +17137,8 @@ classes:
         description: Set of extension attributes that apply to this extension class
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   ExtensionAttribute:
     description: Extension Attribute for a USDM element
     title: ExtensionAttribute
@@ -17051,6 +17214,8 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
   QuantityRange:
     definition_uri: ncit:C217000
     description: The total amount (number), or the limits (minimum and maximum) of
@@ -17060,6 +17225,7 @@ classes:
     mixins:
       - Quantity
       - Range 
+      - Base
     attributes:
       id:
         definition_uri: ncit:C25364
@@ -17140,6 +17306,33 @@ classes:
         range: string
         multivalued: true
         inlined_as_list: true
+    mixins:
+    - Base
+  Base:
+    description: A base class for all USDM classes
+    mixin: true
+    attributes:
+      instance_type:
+        description: API attribute to identify the class type
+        aliases:
+        - instanceType
+        range: string
+        multivalued: false
+        inlined: true
+      extension_attributes:
+        description: Extension attributes for this instance
+        aliases:
+        - extensionAttributes
+        range: ExtensionAttribute
+        required: false
+        multivalued: true
+        inlined_as_list: true
+      rules:
+        description: Set of rules that apply to this instanceType
+        range: Rule
+        required: false
+        multivalued: true
+        inlined: true
 description: Unified Study Definitions Model version 3. The industry standard for
   digital protocol content, defining reusable protocols expressing scientific questions
   via structure and concepts that are reused and referenced downstream, creating a
