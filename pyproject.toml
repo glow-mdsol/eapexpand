@@ -13,10 +13,10 @@ classifiers = [
 ]
 dependencies = [
     "dataclasses-json>=0.6.7",
-    "linkml>=1.9.6",
-    "linkml-model>=1.8.0",
+    "linkml>=1.12.1",
+    "linkml-model>=1.12.0",
     "mdb-parser>=0.0.3",
-    "python-dotenv>=1.2.2",
+    "python-dotenv>=1.2.4",
 ]
 
 [project.scripts]
@@ -25,11 +25,11 @@ load_usdm = "eapexpand.cli:load_usdm"
 diff = "eapexpand.helpers.linkml_diff:main"
 
 [dependency-groups]
-shapes = ["rdflib>=7.5.0,<8"]
+shapes = ["rdflib>=7.6.0,<8"]
 dev = [
-    "pytest>=8.0.1,<9",
-    "ipykernel>=6.29.5,<7",
-    "pyrefly>=0.50.1",
+    "pytest>=8.4.2,<9",
+    "ipykernel>=6.31.0,<7",
+    "pyrefly>=1.4.0",
 ]
 
 [tool.uv]
