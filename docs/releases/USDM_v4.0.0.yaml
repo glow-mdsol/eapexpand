@@ -49,43 +49,6 @@ classes:
         - systemName
         range: string
         required: true
-  Rule:
-    description: A USDM CDISC Core rule
-    attributes:
-      text:
-        description: Verbatim Text describing the rule
-        range: string
-        required: true
-      result_type:
-        description: Type of Result (WARNING/ERROR)
-        aliases:
-        - resultType
-        range: string
-        required: true
-      target_entities:
-        description: Entities to which this rule applies
-        aliases:
-        - targetEntities
-        range: string
-        minimum_cardinality: 0
-      target_attributes:
-        description: Entity attributes to which this rule applies
-        aliases:
-        - targetAttributes
-        range: string
-        minimum_cardinality: 0
-      core_rule_id:
-        description: CORE Rule Identifier
-        aliases:
-        - coreRuleId
-        range: string
-        required: true
-      check_id:
-        description: Check Identifier
-        aliases:
-        - checkId
-        range: string
-        required: true
   Base:
     description: A base class for all USDM classes
     mixin: true
@@ -105,12 +68,6 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
-      rules:
-        description: Set of rules that apply to this instanceType
-        range: Rule
-        required: false
-        multivalued: true
-        inlined: true
   StudyDefinitionDocumentVersion:
     definition_uri: ncit:C215491
     description: A representation of a particular edition or snapshot of the study
