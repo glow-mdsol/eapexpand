@@ -62,6 +62,28 @@ def _merge_cardinality(existing: Optional[str], incoming: Optional[str]) -> Opti
     return f"{lower}..{upper}"
 
 
+BASE_ATTRIBUTES = (
+    dict(
+        attribute_name="instanceType",
+        attribute_type="String",
+        attribute_cardinality="0..1",
+        attribute_note="API attribute to identify the class type",
+    ),
+    dict(
+        attribute_name="extensionAttributes",
+        attribute_type="ExtensionAttribute",
+        attribute_cardinality="0..*",
+        attribute_note="Extension attributes for this instance",
+    ),
+    dict(
+        attribute_name="rules",
+        attribute_type="Rule",
+        attribute_cardinality="0..*",
+        attribute_note="Set of rules that apply to this instanceType",
+    ),
+)
+
+
 def _merge_pipe_type(existing: Optional[str], incoming: Optional[str]) -> str:
     values = []
     for value in [existing, incoming]:
@@ -282,6 +304,13 @@ def generate(
                         _output[attrib.get("attribute_name")] = existing
                     else:
                         _output[attrib.get("attribute_name")] = attrib
+                if obj.name == "AliasCode":
+                    # AliasCode inherits from Base in the LinkML
+                    for _base_attrib in BASE_ATTRIBUTES:
+                        _output.setdefault(
+                            _base_attrib["attribute_name"],
+                            dict(_base_attrib, inherited="Y"),
+                        )
                 # connections = [
                 #     connectors[cid]
                 #     for cid in connectors
