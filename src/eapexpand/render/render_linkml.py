@@ -195,75 +195,6 @@ def generate_schema_builder(
         ],
         use_attributes=True,
     )
-    # TODO: WIP for defining the a class for CORE rules
-    rule = ClassDefinition("Rule", description="A USDM CDISC Core rule")
-    # """
-    # self.core_id: str = record_params["core_id"]
-    # self.reference: List[dict] = record_params["reference"]
-    # self.sensitivity: Sensitivity = record_params["sensitivity"]
-    # self.executability: str = record_params["executability"]
-    # self.category: str = record_params["category"]
-    # self.author: str = record_params["author"]
-    # self.description: str = record_params["description"]
-    # self.authority: dict = record_params["authority"]
-    # self.standards: dict = record_params["standards"]
-    # self.classes: dict = record_params.get("classes")
-    # self.domains: dict = record_params.get("domains")
-    # self.datasets: dict = record_params.get("datasets")
-    # self.rule_type: RuleTypes = record_params["rule_type"]
-    # self.operations: List[dict] = record_params.get("operations")
-    # self.conditions: dict = record_params["conditions"]
-    # self.actions: dict = record_params["actions"]
-    # self.output_variables: dict = record_params.get("output_variables")
-    # """
-    sb.add_class(
-        rule,
-        slots=[
-            SlotDefinition(
-                name="text",
-                range="string",
-                description="Verbatim Text describing the rule",
-                required=True,
-            ),
-            SlotDefinition(
-                name="result_type",
-                description="Type of Result (WARNING/ERROR)",
-                range="string",
-                required=True,
-                aliases=["resultType"],
-            ),
-            SlotDefinition(
-                name="target_entities",
-                description="Entities to which this rule applies",
-                range="string",
-                minimum_cardinality=0,
-                aliases=["targetEntities"],
-            ),
-            SlotDefinition(
-                name="target_attributes",
-                description="Entity attributes to which this rule applies",
-                range="string",
-                minimum_cardinality=0,
-                aliases=["targetAttributes"],
-            ),
-            SlotDefinition(
-                name="core_rule_id",
-                description="CORE Rule Identifier",
-                range="string",
-                required=True,
-                aliases=["coreRuleId"],
-            ),
-            SlotDefinition(
-                name="check_id",
-                description="Check Identifier",
-                range="string",
-                required=True,
-                aliases=["checkId"],
-            ),
-        ],
-        use_attributes=True,
-    )
-
     # add the default types
     base = ClassDefinition(
         "Base", description="A base class for all USDM classes", mixin=True
@@ -287,14 +218,6 @@ def generate_schema_builder(
                 inlined_as_list=True,
                 required=False,
                 aliases=["extensionAttributes"],
-            ),
-            SlotDefinition(
-                name="rules",
-                range="Rule",
-                description="Set of rules that apply to this instanceType",
-                multivalued=True,
-                inlined=True,
-                required=False,
             ),
         ],
         use_attributes=True,

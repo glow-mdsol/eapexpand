@@ -75,12 +75,6 @@ BASE_ATTRIBUTES = (
         attribute_cardinality="0..*",
         attribute_note="Extension attributes for this instance",
     ),
-    dict(
-        attribute_name="rules",
-        attribute_type="Rule",
-        attribute_cardinality="0..*",
-        attribute_note="Set of rules that apply to this instanceType",
-    ),
 )
 
 
