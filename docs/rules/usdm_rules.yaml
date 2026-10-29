@@ -1,0 +1,388 @@
+id: https://cdisc.org/usdm/rules
+name: USDM_Rules
+description: >-
+  Schema for the CDISC CORE conformance rules package for USDM
+  (e.g. usdm_4-0_rules.json). Kept separate from the USDM model schema because
+  it describes conformance checks, not study data.
+
+  Field names follow the MDR API serialisation (underscores, e.g. Rule_Type),
+  whereas the cdisc-rules-engine authoring schema
+  (resources/schema/rule/CORE-base.json) uses spaces (e.g. "Rule Type").
+  Value constraints are taken from the engine schema.
+imports:
+- linkml:types
+- core_enums
+prefixes:
+  linkml: https://w3id.org/linkml/
+  usdm_rules: https://cdisc.org/usdm/rules/
+default_prefix: usdm_rules
+default_range: string
+
+classes:
+  Any:
+    class_uri: linkml:Any
+
+  RulesPackage:
+    description: A conformance rules package as served by the CDISC MDR.
+    tree_root: true
+    attributes:
+      _links:
+        range: PackageLinks
+        inlined: true
+      rules:
+        description: Rules keyed by rule UUID.
+        range: Rule
+        multivalued: true
+        inlined: true
+        required: true
+
+  Rule:
+    description: A CDISC CORE conformance rule.
+    attributes:
+      id:
+        description: Rule UUID.
+        identifier: true
+        required: true
+      Core:
+        range: CoreIdentifier
+        inlined: true
+        required: true
+      Description:
+        description: Plain language description of the rule.
+        required: true
+      Rule_Type:
+        description: >-
+          Determines how the primary dataset is built before the rule is applied.
+        range: RuleType
+        required: true
+      Executability:
+        description: >-
+          Extent to which the rule can be executed automatically by the rules
+          engine.
+        range: Executability
+        required: true
+      Sensitivity:
+        description: >-
+          Granularity at which issues are reported.
+        range: Sensitivity
+        required: true
+      Grouping_Variables:
+        description: Required when Sensitivity is Group.
+        multivalued: true
+      Scope:
+        description: The entities to which the rule applies.
+        range: Scope
+        inlined: true
+        required: true
+      Outcome:
+        description: What is reported when the rule is triggered.
+        range: Outcome
+        inlined: true
+        required: true
+      Check:
+        description: >-
+          The logic that identifies a failure: either a JSONata expression
+          (string) or a structured condition tree.
+        required: true
+        any_of:
+        - range: string
+        - range: CheckExpression
+      Operations:
+        description: >-
+          Operations executed before the check, whose results can be referenced
+          from the check.
+        range: Operation
+        multivalued: true
+        inlined_as_list: true
+      Match_Datasets:
+        description: >-
+          Datasets to join to the primary dataset before the check is applied.
+        range: MatchDataset
+        multivalued: true
+        inlined_as_list: true
+      Authorities:
+        description: >-
+          The organisations, standards and source references for the rule.
+        range: Authority
+        multivalued: true
+        inlined_as_list: true
+        required: true
+      _links:
+        range: RuleLinks
+        inlined: true
+
+  CoreIdentifier:
+    description: Identity and publication status of the CORE rule.
+    attributes:
+      Id:
+        description: CORE rule identifier, e.g. CORE-000826. Absent for Draft rules.
+        pattern: "^CORE-\\d{6}$"
+      Status:
+        range: CoreStatus
+        required: true
+      Version:
+        description: Always "1".
+        required: true
+        equals_string: "1"
+
+  Scope:
+    description: Defines which entities the rule applies to.
+    attributes:
+      Entities:
+        range: EntityScope
+        inlined: true
+        required: true
+
+  EntityScope:
+    attributes:
+      Include:
+        description: USDM class names (PascalCase), or ALL.
+        multivalued: true
+        pattern: "^(ALL|[A-Z]([a-z]+[A-Z]?)*)$"
+      Exclude:
+        description: USDM class names (PascalCase), or ALL.
+        multivalued: true
+        pattern: "^(ALL|[A-Z]([a-z]+[A-Z]?)*)$"
+
+  Outcome:
+    description: What is reported when the rule is triggered.
+    attributes:
+      Message:
+        description: Outcome message to be displayed when the rule is triggered.
+        required: true
+      Output_Variables:
+        description: Output variables produced by the rule.
+        multivalued: true
+
+  CheckExpression:
+    description: Structured check; exactly one of all/any/not is expected.
+    attributes:
+      all:
+        range: Condition
+        multivalued: true
+        inlined_as_list: true
+      any:
+        range: Condition
+        multivalued: true
+        inlined_as_list: true
+      not:
+        range: Condition
+        inlined: true
+
+  Condition:
+    description: >-
+      Either a leaf comparison (name/operator/value) or a nested all/any/not.
+    is_a: CheckExpression
+    attributes:
+      name:
+        description: >-
+          Attribute that the check targets, or an operation result ($id).
+      operator:
+        description: The check to perform on the target.
+        range: CheckOperator
+      value:
+        description: >-
+          Reference value or criteria for the check. Interpreted as an attribute
+          name unless value_is_literal is true.
+        any_of:
+        - range: string
+        - range: float
+        - range: boolean
+        - range: string
+          multivalued: true
+      value_is_literal:
+        description: >-
+          Whether the string in value is a literal; when false or absent it is
+          interpreted as a variable name.
+        range: boolean
+      negative:
+        description: >-
+          Used with invalid_duration; whether negative durations are valid (true)
+          or invalid (false).
+        range: boolean
+
+  Operation:
+    description: A derived value computed before the check is evaluated.
+    attributes:
+      id:
+        description: >-
+          Identifier for the operation result, referenced from a Check as $id.
+        required: true
+      operator:
+        description: The operation to execute.
+        range: OperationOperator
+        required: true
+      name:
+        description: Variable that the operation targets.
+      domain:
+        description: Domain or data structure context for the operation.
+      group:
+        description: >-
+          Variables used for grouping data before the operation is applied.
+        multivalued: true
+      group_aliases:
+        description: >-
+          Alternative names for the grouping variables, allowing grouped results
+          to be merged back using different column names.
+        multivalued: true
+      filter:
+        description: >-
+          Filter criteria; the operation is applied only to data matching it.
+        range: Any
+      map:
+        description: >-
+          Mapping dictionaries; each has input column names as properties and an
+          output property giving the result value.
+        range: Any
+        multivalued: true
+      returntype:
+        description: Type of value returned by the operation.
+        range: ReturnType
+      namespace:
+        description: Namespace against which XHTML fragments are validated.
+      codelist_code:
+        description: Codelist code used for controlled terminology lookups.
+      ct_package_type:
+        description: Controlled terminology package type, e.g. DDF.
+      ct_package_types:
+        description: Controlled terminology package types to include.
+        multivalued: true
+      version:
+        description: Controlled terminology version used by the operation.
+      term_code:
+        description: Column of term codes used for terminology lookups.
+      term_value:
+        description: Column of term submission values used for terminology lookups.
+      term_pref_term:
+        description: Column of term preferred terms used for terminology lookups.
+
+  MatchDataset:
+    description: A dataset joined to the primary dataset before the check.
+    attributes:
+      Name:
+        required: true
+      Join_Type:
+        range: JoinType
+      Child:
+        range: boolean
+      Wildcard:
+      Keys:
+        description: Join keys; a bare string means the same name on both sides.
+        multivalued: true
+        inlined_as_list: true
+        any_of:
+        - range: string
+        - range: MatchKey
+
+  MatchKey:
+    description: A pair of columns used to join datasets.
+    attributes:
+      Left:
+        required: true
+      Right:
+        required: true
+
+  Authority:
+    description: An organisation and the standards for which it publishes the rule.
+    attributes:
+      Organization:
+        required: true
+      Standards:
+        range: AuthorityStandard
+        multivalued: true
+        inlined_as_list: true
+        required: true
+
+  AuthorityStandard:
+    attributes:
+      Name:
+        required: true
+      Version:
+        required: true
+      References:
+        range: Reference
+        multivalued: true
+        inlined_as_list: true
+        required: true
+
+  Reference:
+    description: Source reference for the rule within a standard.
+    attributes:
+      Origin:
+        description: Source document; "USDM Conformance Rules" for USDM.
+      Version:
+      Rule_Identifier:
+        range: ReferenceRuleIdentifier
+        inlined: true
+      Citations:
+        range: Citation
+        multivalued: true
+        inlined_as_list: true
+      Validator_Rule_Message:
+
+  ReferenceRuleIdentifier:
+    attributes:
+      Id:
+        description: Source rule identifier, e.g. DDF00062.
+        pattern: "^DDF\\d{5}$"
+      Version:
+
+  Citation:
+    description: Guidance quoted from a source document.
+    attributes:
+      Cited_Guidance:
+      Document:
+
+  Link:
+    attributes:
+      href:
+      title:
+      type:
+
+  PackageLinks:
+    attributes:
+      self_link:
+        alias: self
+        range: Link
+        inlined: true
+
+  RuleLinks:
+    attributes:
+      self_link:
+        alias: self
+        range: Link
+        inlined: true
+      package:
+        range: Link
+        inlined: true
+      standards:
+        range: Link
+        multivalued: true
+        inlined_as_list: true
+
+enums:
+  CoreStatus:
+    description: Publication status of the CORE rule.
+    permissible_values:
+      Draft:
+        description: Rule is in draft and has no CORE identifier yet.
+      Published:
+        description: Rule is published and has a CORE identifier.
+  JoinType:
+    description: How a Match_Datasets entry is joined to the primary dataset.
+    permissible_values:
+      inner:
+        description: Keep only records that match in both datasets.
+      left:
+        description: Keep all records of the primary dataset.
+  ReturnType:
+    description: >-
+      Type of value returned by the codelist_terms operation. Code is the NCI
+      code, value is the submission value and pref_term is the NCI preferred term.
+    permissible_values:
+      code:
+        description: NCI code.
+      value:
+        description: Submission value.
+      pref_term:
+        description: NCI preferred term.
