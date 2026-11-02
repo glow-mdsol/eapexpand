@@ -402,6 +402,8 @@ def generate(
             write_cell(_sheet, row=idx, column=4, value=item.definition)
     # Span the column widths
     for wks in doc.worksheets:
+        if wks.title == "USDM":
+            wks.auto_filter.ref = wks.dimensions
         _columns = cols.get(wks.title, {})
         for colnum, length in _columns.items():
             column_width = min([length, 50])
