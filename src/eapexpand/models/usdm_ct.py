@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 from dataclasses_json import config, dataclass_json
+from ..report import get_report
 
 """
 Handles the loading of the USDM CT
@@ -80,18 +81,21 @@ class DDFEntity:
                 return attr
             elif attr.qualified_name == attribute_name:
                 print(f"Warning, using a fuzzy match for {attribute_name}")
+                get_report().warning("CT: fuzzy attribute matches", f"{self.entity_name}.{attribute_name} matched {attr.logical_data_model_name}")
                 return attr
         for attr in self.complex_datatype_relationships:
             if attr.logical_data_model_name == attribute_name:
                 return attr
             elif attr.qualified_name == attribute_name:
                 print(f"Warning, using a fuzzy match for {attribute_name}")
+                get_report().warning("CT: fuzzy attribute matches", f"{self.entity_name}.{attribute_name} matched {attr.logical_data_model_name}")
                 return attr
         for attr in self.relationships:
             if attr.logical_data_model_name == attribute_name:
                 return attr
             elif attr.qualified_name == attribute_name:
                 print(f"Warning, using a fuzzy match for {attribute_name}")
+                get_report().warning("CT: fuzzy attribute matches", f"{self.entity_name}.{attribute_name} matched {attr.logical_data_model_name}")
                 return attr
         return None
 

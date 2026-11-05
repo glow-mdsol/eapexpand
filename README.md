@@ -39,12 +39,21 @@
      ```
   * There is a short-cut for USDM
   ```shell
-    $ uv run load_usdm v3.13.0
+    $ uv run load_usdm v4.0.0
   ```
+* Only USDM v4.x is supported (v3 and earlier are deprecated). API attributes (`*Id`/`*Ids` references
+  and API-only relationships) are derived from the DDF-RA OpenAPI specification in `docs/ddf_ra/USDM_API.yaml`;
+  `expand` takes `--openapi-spec` to use a different one.
 
 ## Output Types
 ### XLSX
 A Excel formatted spreadsheet will be generated for the model, normalising the entities and attributes into a tabular format.
+
+### Generation report
+For USDM generation a Markdown report (`<name>_report.md`, e.g. `USDM_v4.0.0_report.md`) is written alongside the
+outputs. It lists the errors, warnings and notes raised during the run: skipped/orphan UML connectors, classes and
+attributes with no CT entry, codelist problems, API-only relationships added from the OpenAPI specification, and the
+results of the cardinality audit (also available standalone as `uv run card_audit <output_dir>`).
 
 ### LinkML
 A LinkML formatted YAML file will be generated for the model (Still a WIP).  There is an optional `--internal-enum` option to add the Permissible Values to the enumeration (it makes the file very large)

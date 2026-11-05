@@ -17,6 +17,7 @@ load_dotenv()
 from .loader import load_expanded_dir
 from .models.sqlite_loader import load_from_file
 from .models.usdm_ct import CodeList, DDFEntity, PermissibleValue
+from .report import get_report
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -106,6 +107,10 @@ def load_usdm_ct(filename: str):
                             logger.warning(
                                 f"Attribute {entity.logical_data_model_name}.{attr.logical_data_model_name} has a new codelist that is not yet defined in the CT. Creating a placeholder codelist with code CNEW-{attr.logical_data_model_name}."
                             )
+                            get_report().warning(
+                                "CT: placeholder (CNEW) codelists",
+                                f"{entity.logical_data_model_name}.{attr.logical_data_model_name} -> CNEW-{attr.logical_data_model_name}",
+                            )
                             # create a new codelist placeholder
                             codelist = CodeList(
                                 entity_name=entity.entity_name,
@@ -129,6 +134,10 @@ def load_usdm_ct(filename: str):
                                 print(
                                     f"Retrieving codelist {attr.external_code_list} for {entity.entity_name}.{attr.logical_data_model_name} failed"
                                 )
+                                get_report().warning(
+                                    "CT: codelists that could not be retrieved",
+                                    f"{attr.external_code_list} for {entity.entity_name}.{attr.logical_data_model_name}",
+                                )
                             # bind the codelist to the attribute
                             attr.codelist = codelist
                         else:
@@ -137,6 +146,10 @@ def load_usdm_ct(filename: str):
                 else:
                     print(
                         f"Extracting {attr.value_list}  for {attr.logical_data_model_name} failed"
+                    )
+                    get_report().warning(
+                        "CT: value lists that could not be extracted",
+                        f"{entity.entity_name}.{attr.logical_data_model_name}: {attr.value_list}",
                     )
 
     return entities, codelists
@@ -151,11 +164,16 @@ def main_usdm(
     internal_enums: bool = False
 ):
     print(f"Processing USDM from {source_dir_or_file} with CT {controlled_term}: using internal enums: {internal_enums}")
+    report = get_report()
+    report.set("UML model", source_dir_or_file)
+    report.set("Controlled terminology", controlled_term)
+    report.set("Output directory", output_dir)
+    report.set("Generated", ", ".join(["workbook"] + [aspect for aspect, flag in gen.items() if flag]))
     NAMESPACE = "https://cdisc.org/usdm"
     if Path(source_dir_or_file).is_file():
         assert Path(source_dir_or_file).suffix == ".qea", "Only QEA files are supported"
         logger.info(f"Loading from file {source_dir_or_file}")
-        # handle the cases, release_3-5-0 and v3.5.0
+        # e.g. v4.0.0_USDM_UML.qea -> v4.0.0
         version = Path(source_dir_or_file).stem[:-9]        
         name = "USDM" + "_" + version
         document = load_from_file(source_dir_or_file, prefix=NAMESPACE, name=name, api_metadata=api_metadata)
@@ -256,3 +274,31 @@ def main_usdm(
     from .render.render_usdm_workbook import generate as generate_workbook
 
     _ = generate_workbook(document.name, document, ct_content, codelists, output_dir)
+    if gen.get("linkml") and Path(source_dir_or_file).is_file():
+        _audit_cardinality(report, Path(source_dir_or_file), Path(output_dir), document.name)
+    report_file = report.write(output_dir, document.name)
+    print(
+        f"Generation report: {report_file} ({report.count('error')} error(s), "
+        f"{report.count('warning')} warning(s))"
+    )
+
+
+def _audit_cardinality(report, qea: Path, output_dir: Path, name: str) -> None:
+    """Add the UML-vs-generated cardinality audit (see ``card_audit``) to the report."""
+    from .cli import DEFAULT_OPENAPI_SPEC
+    from .helpers.card_audit import audit
+
+    spec = Path(report.metadata.get("OpenAPI specification", DEFAULT_OPENAPI_SPEC))
+    schema, workbook = output_dir / f"{name}.yaml", output_dir / f"{name}.xlsx"
+    if not (spec.is_file() and schema.is_file() and workbook.is_file()):
+        report.warning("Cardinality audit", "skipped: generated schema, workbook or OpenAPI spec not found")
+        return
+    findings = audit(qea, schema, workbook, spec)
+    for category, messages in findings.errors.items():
+        for message in messages:
+            report.error(f"Cardinality: {category}", message)
+    for category, messages in findings.warnings.items():
+        if category.startswith("class not in workbook"):
+            continue  # already reported by the workbook renderer
+        for message in messages:
+            report.warning(f"Cardinality: {category}", message)

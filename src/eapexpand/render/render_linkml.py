@@ -8,6 +8,7 @@ from linkml_runtime.utils.schema_builder import (
     SlotDefinition,
 )
 from ..models.eap import Attribute, Connector, Document
+from ..report import get_report
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,6 +37,20 @@ def _to_snake_case(name: str) -> str:
     normalized = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", normalized)
     normalized = re.sub(r"_+", "_", normalized).strip("_")
     return normalized.lower()
+
+
+def _uml_bounds(cardinality: Optional[str]) -> tuple[Optional[int], Optional[int]]:
+    """
+    Parse a UML multiplicity ("0..1", "1..*", "1", "0..2") into (lower, upper);
+    upper is None when unbounded or unknown.
+    """
+    text = (cardinality or "").strip()
+    lower_raw, _, upper_raw = text.partition("..")
+    if not upper_raw:
+        upper_raw = lower_raw
+    lower = int(lower_raw) if lower_raw.isdigit() else None
+    upper = int(upper_raw) if upper_raw.isdigit() else None
+    return lower, upper
 
 
 def _merge_slot_definitions(existing: SlotDefinition, incoming: SlotDefinition) -> SlotDefinition:
@@ -68,8 +83,26 @@ def _merge_slot_definitions(existing: SlotDefinition, incoming: SlotDefinition) 
     incoming_required = bool(incoming.required)
     existing.required = existing_required and incoming_required
 
+    # a union is as permissive as its widest member
+    if existing.minimum_cardinality is not None and incoming.minimum_cardinality is not None:
+        existing.minimum_cardinality = min(existing.minimum_cardinality, incoming.minimum_cardinality)
+    else:
+        existing.minimum_cardinality = None
+    if existing.multivalued != incoming.multivalued:
+        # one member is single-valued (implicit max 1): only a bounded list keeps its max
+        bounded = [s.maximum_cardinality for s in (existing, incoming) if s.multivalued]
+        existing.maximum_cardinality = bounded[0] if bounded and bounded[0] is not None else None
+    elif existing.maximum_cardinality is not None and incoming.maximum_cardinality is not None:
+        existing.maximum_cardinality = max(existing.maximum_cardinality, incoming.maximum_cardinality)
+    else:
+        existing.maximum_cardinality = None
+
     existing.multivalued = bool(existing.multivalued) or bool(incoming.multivalued)
-    if existing.multivalued:
+    is_reference = existing.inlined is False and not existing.inlined_as_list
+    if is_reference:
+        # references by id (union connectors sharing an API name) stay un-inlined
+        pass
+    elif existing.multivalued:
         existing.inlined_as_list = True
         existing.inlined = False
     elif incoming.inlined:
@@ -279,8 +312,13 @@ def generate_schema_builder(
                 # if attr.name == "name":
                 #     print(f"Adding attribute {obj.name}.{attr.name}")
                 # name is protected in schemabuilder
-                source_attribute_name = attr.name
-                if attr.name == "name":
+                # relationships exchanged by id are named for the exchange format
+                # (e.g. nextId) but keep the UML target class as their range
+                is_reference = isinstance(attr, Connector) and attr.is_reference
+                source_attribute_name = attr.api_name if is_reference else attr.name
+                if is_reference:
+                    source_slot_name = str(attr.api_name)
+                elif attr.name == "name":
                     # attribute name where "name" gets blitzed
                     source_slot_name = f"{obj.name}{attr.name.capitalize()}"
                 else:
@@ -303,6 +341,8 @@ def generate_schema_builder(
                         "value": str(source_slot_name),
                     },
                 }
+                if is_reference:
+                    _attr.annotations["uml_role"] = {"tag": "uml_role", "value": str(attr.name)}
                 if attr.reference_url:
                     if attr.reference_url.startswith("http"):
                         _attr.definition_uri = attr.reference_url
@@ -331,7 +371,9 @@ def generate_schema_builder(
                         if attr.attribute_type not in TYPE_MAPPING:
                             _missing_types.append(attr.attribute_type)
                         # NOTE: this is a hack to handle the different types of superclass
-                        if attr.attribute_type in [
+                        # (not needed for references by id: the UML range already
+                        # admits its subclasses)
+                        if not is_reference and attr.attribute_type in [
                             "ScheduledInstance",
                             "ScheduledDecisionInstance",
                             "ScheduledActivityInstance",
@@ -358,11 +400,13 @@ def generate_schema_builder(
                 #     _attr.required = False
                 if isinstance(attr, (Connector,)):
                     # Connector uses cardinality
-                    if attr.multivalued:
-                        _attr.multivalued = True
+                    _attr.multivalued = bool(attr.multivalued)
+                    if is_reference:
+                        # serialised as the target's identifier, not a nested object
+                        _attr.inlined = False
+                    elif attr.multivalued:
                         _attr.inlined_as_list = True
                     else:
-                        _attr.multivalued = False
                         _attr.inlined = True
                     if attr.optional:
                         _attr.required = False
@@ -379,9 +423,14 @@ def generate_schema_builder(
                     else:
                         _attr.multivalued = True
                         _attr.inlined_as_list = True
-                # if attr.name == "plannedSex":
-                #     logger.warning("Mapping plannedSex to List")
-                #     _attr.multivalued = True
+                if _attr.multivalued:
+                    # `required` alone only demands the key, so carry the UML
+                    # bounds of a list (1..*, 0..2) as explicit cardinalities
+                    _lower, _upper = _uml_bounds(attr.cardinality)
+                    if _lower and _lower > 0:
+                        _attr.minimum_cardinality = _lower
+                    if _upper is not None:
+                        _attr.maximum_cardinality = _upper
                 if attr.preferred_term:
                     _attr.title = attr.preferred_term
                 if attr.synonyms:
@@ -443,6 +492,7 @@ def generate_schema_builder(
         sb.add_class(_map)
     for absent_type in set(_missing_types) - set(TYPE_MAPPING.keys()):
         print("Missing type:", absent_type)
+        get_report().warning("LinkML: types with no class or mapping", absent_type)
     print("Writing model to", output_dir)
     _schema = sb.as_dict()
 

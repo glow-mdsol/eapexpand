@@ -23,6 +23,7 @@ dependencies = [
 expand = "eapexpand.cli:main"
 load_usdm = "eapexpand.cli:load_usdm"
 diff = "eapexpand.helpers.linkml_diff:main"
+card_audit = "eapexpand.helpers.card_audit:main"
 
 [dependency-groups]
 shapes = ["rdflib>=7.6.0,<8"]

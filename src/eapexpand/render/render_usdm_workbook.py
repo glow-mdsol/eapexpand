@@ -1,6 +1,7 @@
 import os
 from typing import Dict, Optional
 from eapexpand.models.eap import Attribute, Connector, Document, ModelObject
+from eapexpand.report import get_report
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
@@ -23,7 +24,24 @@ HEADERS = [
     "External Codelist",
     "Codelist Extensible",
     "Inherited",
+    "UML Role",
 ]
+
+
+def _exchange_name(attribute) -> str:
+    """
+    The name the attribute is exchanged under: relationships passed by id use the
+    API name (e.g. nextId, typed by the UML target class), consistent with the LinkML.
+    """
+    if isinstance(attribute, Connector) and attribute.is_reference:
+        return str(attribute.api_name)
+    return attribute.name
+
+
+def _uml_role(attribute) -> str:
+    if isinstance(attribute, Connector) and attribute.is_reference:
+        return attribute.name or ""
+    return ""
 
 
 def _parse_cardinality(value: Optional[str]) -> tuple[Optional[int], Optional[str]]:
@@ -41,6 +59,13 @@ def _parse_cardinality(value: Optional[str]) -> tuple[Optional[int], Optional[st
         number = int(text)
         return number, str(number)
     return None, None
+
+
+def _normalise_cardinality(value: Optional[str]) -> Optional[str]:
+    """Write a bare UML multiplicity (e.g. "1") as a range ("1..1")."""
+    if value and value.strip().isdigit():
+        return f"{value.strip()}..{value.strip()}"
+    return value
 
 
 def _merge_cardinality(existing: Optional[str], incoming: Optional[str]) -> Optional[str]:
@@ -116,6 +141,7 @@ def generate(
             _partitions.setdefault(_package.name, []).append(_object)
         else:
             print("Orphaned Object: ", _object.name, " -> ", _object.package_id)
+            get_report().warning("Workbook: objects outside any package", f"{_object.name} (package {_object.package_id})")
     cols = {}
     doc = Workbook()
 
@@ -163,6 +189,7 @@ def generate(
                 _ct_reference = ct_content.get(obj.name)
                 if _ct_reference is None:
                     logger.warning(f"Unable to find {obj.name} in CT")
+                    get_report().warning("Workbook: classes omitted (not in the CT)", obj.name)
                     continue  # type: Entity
                 # super classes, we need to make sure the attributes from the generalization are included, but marked as inherited
                 if obj.generalizations:
@@ -198,7 +225,7 @@ def generate(
                 # includes object attributes and connections
                 for _attribute in obj.attributes:
                     _attribute: Attribute
-                    attrib = _output.setdefault(_attribute.name, {})
+                    attrib = _output.setdefault(_exchange_name(_attribute), {})
                     if not attrib:
                         # add a reference to show that the attribute is inherited from the generalization
                         is_inherited = bool(
@@ -206,11 +233,12 @@ def generate(
                             and _attribute in _generalization.object_attributes
                         )
                         attrib = dict(
-                            attribute_name=_attribute.name,
+                            attribute_name=_exchange_name(_attribute),
                             attribute_type=_attribute.attribute_type,
                             attribute_cardinality=_attribute.cardinality,
                             attribute_note=_attribute.description,
                             inherited="Y" if is_inherited else "",
+                            uml_role=_uml_role(_attribute),
                         )
                         if _ct_reference:
                             _attr_ref = _ct_reference.get_attribute(_attribute.name)
@@ -237,7 +265,7 @@ def generate(
                             missing = (obj.name, _attribute.name)
                             if missing not in missing_references.get("attributes"):
                                 missing_references["attributes"].append(missing)
-                    _output[_attribute.name] = attrib
+                    _output[_exchange_name(_attribute)] = attrib
                 for outgoing_connection in obj.outgoing_connections:  # type: Connector
                     print(
                         "Adding connection ", outgoing_connection.name, " to ", obj.name
@@ -247,10 +275,11 @@ def generate(
                         outgoing_connection.end_object_id
                     ).name
                     attrib = dict(
-                        attribute_name=outgoing_connection.name,
+                        attribute_name=_exchange_name(outgoing_connection),
                         attribute_type=_target_name,
                         attribute_cardinality=outgoing_connection.dest_card,
                         attribute_note=None,
+                        uml_role=_uml_role(outgoing_connection),
                     )
                     _attr_ref = _ct_reference.get_attribute(outgoing_connection.name)
 
@@ -346,7 +375,7 @@ def generate(
                         sheet,
                         row=row_num,
                         column=4,
-                        value=attrib["attribute_cardinality"],
+                        value=_normalise_cardinality(attrib["attribute_cardinality"]),
                     )
                     if attrib["attribute_note"]:
                         write_cell(
@@ -377,12 +406,16 @@ def generate(
                     write_cell(
                         sheet, row=row_num, column=12, value=attrib.get("inherited", "")
                     )
+                    write_cell(
+                        sheet, row=row_num, column=13, value=attrib.get("uml_role", "")
+                    )
                     row_num += 1
     for c_code, _codelist in codelists.items():
         if c_code.strip().upper() == "CNEW":
             continue
         if _codelist is None:
             print("Missing codelist: ", c_code)
+            get_report().warning("Workbook: codelists with no content", c_code)
             continue
         _sheet = doc.create_sheet(c_code)
         for idx, colheader in enumerate(
@@ -415,6 +448,11 @@ def generate(
     for element in ("objects", "attributes", "connections"):
         if missing_references.get(element):
             for element_diff in missing_references.get(element):
+                get_report().warning(
+                    "CT: classes with no CT entry" if element == "objects"
+                    else "CT: attributes and relationships with no CT entry",
+                    ".".join(element_diff) if isinstance(element_diff, tuple) else str(element_diff),
+                )
                 if isinstance(element_diff, tuple):
                     print(f"Missing {element}: {element_diff[0]} -> {element_diff[1]}")
                 else:

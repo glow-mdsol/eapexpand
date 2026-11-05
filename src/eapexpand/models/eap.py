@@ -357,6 +357,7 @@ class Connector:
         synonyms (Optional[List[str]]): List of synonyms for the connector.
         codelist (Optional[Any]): Codelist associated with the connector.
         aliased_type (Optional[str]): Aliased type of the connector.
+        api_name (Optional[str]): Exchange (API) name when the relationship is passed by id.
     Properties:
         target_object_name (str): Name of the target object, if available.
         source_object_name (str): Name of the source object, if available.
@@ -462,6 +463,14 @@ class Connector:
     codelist: Optional[Any] = field(default=None)
     # aliased type
     aliased_type: Optional[str] = field(default=None)
+    # name of the attribute carrying this relationship by id in the exchange (API)
+    # format, e.g. "nextId"; None when the related object is exchanged inline
+    api_name: Optional[str] = field(default=None)
+
+    @property
+    def is_reference(self) -> bool:
+        """The relationship is exchanged as a reference to the target's id."""
+        return self.api_name is not None
 
     @property
     def target_object_name(self):
