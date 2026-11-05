@@ -12,7 +12,19 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
 LEVELS = ("error", "warning", "info")
+
+
+def display_path(path: str | Path) -> str:
+    """A path relative to the repository root when inside it, so reports are portable."""
+    resolved = Path(path).resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
 _HEADINGS = {"error": "Errors", "warning": "Warnings", "info": "Notes"}
 
 
@@ -26,6 +38,10 @@ class GenerationReport:
     def set(self, key: str, value: object) -> None:
         """Record run metadata (inputs, outputs, options)."""
         self.metadata[key] = str(value)
+
+    def set_path(self, key: str, path: str | Path) -> None:
+        """Record an input/output location (repository-relative where possible)."""
+        self.metadata[key] = display_path(path)
 
     def add(self, level: str, section: str, message: str) -> None:
         self.entries[level].setdefault(section, {})[str(message)] = None
@@ -44,7 +60,7 @@ class GenerationReport:
 
     def to_markdown(self, title: str) -> str:
         lines = [f"# {title} generation report", ""]
-        lines.append(f"Generated {self.started.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        lines.append(f"Generated {self.started.strftime('%Y-%m-%d')}")
         lines.append("")
         if self.metadata:
             lines += ["| | |", "|---|---|"]

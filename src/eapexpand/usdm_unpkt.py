@@ -165,9 +165,9 @@ def main_usdm(
 ):
     print(f"Processing USDM from {source_dir_or_file} with CT {controlled_term}: using internal enums: {internal_enums}")
     report = get_report()
-    report.set("UML model", source_dir_or_file)
-    report.set("Controlled terminology", controlled_term)
-    report.set("Output directory", output_dir)
+    report.set_path("UML model", source_dir_or_file)
+    report.set_path("Controlled terminology", controlled_term)
+    report.set_path("Output directory", output_dir)
     report.set("Generated", ", ".join(["workbook"] + [aspect for aspect, flag in gen.items() if flag]))
     NAMESPACE = "https://cdisc.org/usdm"
     if Path(source_dir_or_file).is_file():
@@ -288,7 +288,12 @@ def _audit_cardinality(report, qea: Path, output_dir: Path, name: str) -> None:
     from .cli import DEFAULT_OPENAPI_SPEC
     from .helpers.card_audit import audit
 
-    spec = Path(report.metadata.get("OpenAPI specification", DEFAULT_OPENAPI_SPEC))
+    spec = DEFAULT_OPENAPI_SPEC
+    if "OpenAPI specification" in report.metadata:
+        spec = Path(report.metadata["OpenAPI specification"])
+        if not spec.is_absolute():
+            from .report import REPO_ROOT
+            spec = REPO_ROOT / spec
     schema, workbook = output_dir / f"{name}.yaml", output_dir / f"{name}.xlsx"
     if not (spec.is_file() and schema.is_file() and workbook.is_file()):
         report.warning("Cardinality audit", "skipped: generated schema, workbook or OpenAPI spec not found")

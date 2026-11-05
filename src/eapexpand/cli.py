@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 import yaml
 from .helpers.openapi_metadata import load_openapi_api_metadata
-from .report import get_report, start_report
+from .report import display_path, get_report, start_report
 
 # API attributes (``*Id``/``*Ids`` references, API-only relationships, AliasCode
 # typing) are derived from the DDF-RA OpenAPI specification.
@@ -39,16 +39,16 @@ def _load_api_metadata(openapi_spec_file: Path, usdm_version: str | None = None)
     spec is only applied if its ``info.version`` matches.
     """
     report = get_report()
-    report.set("OpenAPI specification", openapi_spec_file)
+    report.set_path("OpenAPI specification", openapi_spec_file)
     if not openapi_spec_file.is_file():
         print(f"OpenAPI specification not found ({openapi_spec_file}); no API attributes added")
-        report.warning("OpenAPI", f"Specification not found ({openapi_spec_file}); no API attributes added")
+        report.warning("OpenAPI", f"Specification not found ({display_path(openapi_spec_file)}); no API attributes added")
         return {}
     if usdm_version is not None:
         spec_version = _spec_version(openapi_spec_file)
         if spec_version != usdm_version.lstrip("v"):
             message = (
-                f"OpenAPI specification {openapi_spec_file} is version {spec_version}, "
+                f"OpenAPI specification {display_path(openapi_spec_file)} is version {spec_version}, "
                 f"not {usdm_version}; no API attributes added"
             )
             print(message)
