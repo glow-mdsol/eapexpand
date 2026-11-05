@@ -238,21 +238,6 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
-      document_version_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: documentVersionIds
-          source_slot_name:
-            tag: source_slot_name
-            value: documentVersionIds
-        description: An API attribute added for documentVersions
-        title: API Attribute for documentVersions
-        aliases:
-        - documentVersionIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
       reference_identifiers:
         annotations:
           source_attribute_name:
@@ -287,23 +272,26 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
-      document_versions:
+      document_version_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: documentVersions
+            value: documentVersionIds
           source_slot_name:
             tag: source_slot_name
+            value: documentVersionIds
+          uml_role:
+            tag: uml_role
             value: documentVersions
         description: A USDM relationship between the StudyVersion and StudyDefinitionDocumentVersion
           classes which identifies the version of the study definition document associated
           with the study version.
         aliases:
-        - documentVersions
+        - documentVersionIds
         range: StudyDefinitionDocumentVersion
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
       date_values:
         annotations:
           source_attribute_name:
@@ -350,6 +338,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
       abbreviations:
         annotations:
           source_attribute_name:
@@ -382,6 +371,79 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
+      eligibility_criterion_items:
+        annotations:
+          source_attribute_name:
+            tag: source_attribute_name
+            value: eligibilityCriterionItems
+          source_slot_name:
+            tag: source_slot_name
+            value: eligibilityCriterionItems
+        description: The EligibilityCriterionItem instances of the StudyVersion (API
+          relationship).
+        aliases:
+        - eligibilityCriterionItems
+        range: EligibilityCriterionItem
+        required: false
+        multivalued: true
+        inlined_as_list: true
+      narrative_content_items:
+        annotations:
+          source_attribute_name:
+            tag: source_attribute_name
+            value: narrativeContentItems
+          source_slot_name:
+            tag: source_slot_name
+            value: narrativeContentItems
+        description: The NarrativeContentItem instances of the StudyVersion (API relationship).
+        aliases:
+        - narrativeContentItems
+        range: NarrativeContentItem
+        required: false
+        multivalued: true
+        inlined_as_list: true
+      roles:
+        annotations:
+          source_attribute_name:
+            tag: source_attribute_name
+            value: roles
+          source_slot_name:
+            tag: source_slot_name
+            value: roles
+        description: The StudyRole instances of the StudyVersion (API relationship).
+        range: StudyRole
+        required: false
+        multivalued: true
+        inlined_as_list: true
+      organizations:
+        annotations:
+          source_attribute_name:
+            tag: source_attribute_name
+            value: organizations
+          source_slot_name:
+            tag: source_slot_name
+            value: organizations
+        description: The Organization instances of the StudyVersion (API relationship).
+        range: Organization
+        required: false
+        multivalued: true
+        inlined_as_list: true
+      study_interventions:
+        annotations:
+          source_attribute_name:
+            tag: source_attribute_name
+            value: studyInterventions
+          source_slot_name:
+            tag: source_slot_name
+            value: studyInterventions
+        description: The StudyIntervention instances of the StudyVersion (API relationship).
+        aliases:
+        - studyInterventions
+        range: StudyIntervention
+        required: false
+        multivalued: true
+        inlined_as_list: true
       administrable_products:
         annotations:
           source_attribute_name:
@@ -390,25 +452,41 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: administrableProducts
-        description: The AdministrableProducts involved with a version.
+        description: The AdministrableProduct instances of the StudyVersion (API relationship).
         aliases:
         - administrableProducts
         range: AdministrableProduct
         required: false
         multivalued: true
         inlined_as_list: true
-      bc_surrogates:
+      medical_devices:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: bcSurrogates
+            value: medicalDevices
           source_slot_name:
             tag: source_slot_name
-            value: bcSurrogates
-        description: The set of BiomedicalConcept Surrogates.
+            value: medicalDevices
+        description: The MedicalDevice instances of the StudyVersion (API relationship).
         aliases:
-        - bcSurrogates
-        range: BiomedicalConceptSurrogate
+        - medicalDevices
+        range: MedicalDevice
+        required: false
+        multivalued: true
+        inlined_as_list: true
+      product_organization_roles:
+        annotations:
+          source_attribute_name:
+            tag: source_attribute_name
+            value: productOrganizationRoles
+          source_slot_name:
+            tag: source_slot_name
+            value: productOrganizationRoles
+        description: The ProductOrganizationRole instances of the StudyVersion (API
+          relationship).
+        aliases:
+        - productOrganizationRoles
+        range: ProductOrganizationRole
         required: false
         multivalued: true
         inlined_as_list: true
@@ -420,7 +498,7 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: biomedicalConcepts
-        description: The biomedical concepts used in the study design.
+        description: The BiomedicalConcept instances of the StudyVersion (API relationship).
         aliases:
         - biomedicalConcepts
         range: BiomedicalConcept
@@ -435,36 +513,27 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: bcCategories
-        description: The biomedical concept categories used in the study design.
+        description: The BiomedicalConceptCategory instances of the StudyVersion (API
+          relationship).
         aliases:
         - bcCategories
         range: BiomedicalConceptCategory
         required: false
         multivalued: true
         inlined_as_list: true
-      criteria:
+      bc_surrogates:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: criteria
+            value: bcSurrogates
           source_slot_name:
             tag: source_slot_name
-            value: criteria
-        description: The Eligibility Criteria for a study.
-        range: EligibilityCriterion
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      conditions:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: conditions
-          source_slot_name:
-            tag: source_slot_name
-            value: conditions
-        description: The conditions of the study design.
-        range: Condition
+            value: bcSurrogates
+        description: The BiomedicalConceptSurrogate instances of the StudyVersion
+          (API relationship).
+        aliases:
+        - bcSurrogates
+        range: BiomedicalConceptSurrogate
         required: false
         multivalued: true
         inlined_as_list: true
@@ -476,109 +545,22 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: dictionaries
-        description: The dictionaries used in the study design.
+        description: The SyntaxTemplateDictionary instances of the StudyVersion (API
+          relationship).
         range: SyntaxTemplateDictionary
         required: false
         multivalued: true
         inlined_as_list: true
-      eligibility_criterion_items:
+      conditions:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: eligibilityCriterionItems
+            value: conditions
           source_slot_name:
             tag: source_slot_name
-            value: eligibilityCriterionItems
-        description: The eligibility criteria of the study version.
-        aliases:
-        - eligibilityCriterionItems
-        range: EligibilityCriterionItem
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      medical_devices:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: medicalDevices
-          source_slot_name:
-            tag: source_slot_name
-            value: medicalDevices
-        description: The medical devices involved with a version.
-        aliases:
-        - medicalDevices
-        range: MedicalDevice
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      narrative_content_items:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: narrativeContentItems
-          source_slot_name:
-            tag: source_slot_name
-            value: narrativeContentItems
-        description: The NarrativeContentItems involved with a version.
-        aliases:
-        - narrativeContentItems
-        range: NarrativeContentItem
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      organizations:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: organizations
-          source_slot_name:
-            tag: source_slot_name
-            value: organizations
-        description: The Organisations involved with a version.
-        range: Organization
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      product_organization_roles:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: productOrganizationRoles
-          source_slot_name:
-            tag: source_slot_name
-            value: productOrganizationRoles
-        description: The product organization roles for a study version.
-        aliases:
-        - productOrganizationRoles
-        range: ProductOrganizationRole
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      roles:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: roles
-          source_slot_name:
-            tag: source_slot_name
-            value: roles
-        description: The StudyRoles involved with a version.
-        range: StudyRole
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      study_interventions:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: studyInterventions
-          source_slot_name:
-            tag: source_slot_name
-            value: studyInterventions
-        description: The study interventions involved with a version.
-        aliases:
-        - studyInterventions
-        range: StudyIntervention
+            value: conditions
+        description: The Condition instances of the StudyVersion (API relationship).
+        range: Condition
         required: false
         multivalued: true
         inlined_as_list: true
@@ -616,29 +598,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: scopeId
-        description: An API attribute added for scope
-        title: API Attribute for scope
-        aliases:
-        - scopeId
-        range: string
-        required: true
-        multivalued: false
-        inlined: true
-      scope:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: scope
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: scope
         description: A USDM relationship between the Identifier and Organization classes
           which provides the details associated with each organization that has assigned
           the identifier.
+        aliases:
+        - scopeId
         range: Organization
-        required: false
+        required: true
         multivalued: false
-        inlined: true
+        inlined: false
   Organization:
     definition_uri: ncit:C19711
     description: A formalized group of persons or other organizations collected together
@@ -1071,96 +1042,6 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
-      encounter_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: encounterIds
-          source_slot_name:
-            tag: source_slot_name
-            value: encounterIds
-        description: An API attribute added for encounters
-        title: API Attribute for encounters
-        aliases:
-        - encounterIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      indication_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: indicationIds
-          source_slot_name:
-            tag: source_slot_name
-            value: indicationIds
-        description: An API attribute added for indications
-        title: API Attribute for indications
-        aliases:
-        - indicationIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      element_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: elementIds
-          source_slot_name:
-            tag: source_slot_name
-            value: elementIds
-        description: An API attribute added for elements
-        title: API Attribute for elements
-        aliases:
-        - elementIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      study_intervention_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: studyInterventionIds
-          source_slot_name:
-            tag: source_slot_name
-            value: studyInterventionIds
-        description: An API attribute added for studyInterventions
-        title: API Attribute for studyInterventions
-        aliases:
-        - studyInterventionIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      document_version_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: documentVersionIds
-          source_slot_name:
-            tag: source_slot_name
-            value: documentVersionIds
-        description: An API attribute added for documentVersions
-        title: API Attribute for documentVersions
-        aliases:
-        - documentVersionIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      activity_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: activityIds
-          source_slot_name:
-            tag: source_slot_name
-            value: activityIds
-        description: An API attribute added for activities
-        title: API Attribute for activities
-        aliases:
-        - activityIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
       arms:
         annotations:
           source_attribute_name:
@@ -1175,6 +1056,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
       encounters:
         annotations:
           source_attribute_name:
@@ -1262,6 +1144,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
       elements:
         annotations:
           source_attribute_name:
@@ -1293,23 +1176,27 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
-      study_interventions:
+        minimum_cardinality: 1
+      study_intervention_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: studyInterventions
+            value: studyInterventionIds
           source_slot_name:
             tag: source_slot_name
+            value: studyInterventionIds
+          uml_role:
+            tag: uml_role
             value: studyInterventions
         description: A USDM relationship between the StudyDesign and StudyIntervention
           classes which identifies the set of study interventions associated with
           study design.
         aliases:
-        - studyInterventions
+        - studyInterventionIds
         range: StudyIntervention
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
       estimands:
         annotations:
           source_attribute_name:
@@ -1324,23 +1211,26 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
-      document_versions:
+      document_version_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: documentVersions
+            value: documentVersionIds
           source_slot_name:
             tag: source_slot_name
+            value: documentVersionIds
+          uml_role:
+            tag: uml_role
             value: documentVersions
         description: A USDM relationship between the StudyDesign and StudyDefinitionDocumentVersion
           classes which identifies the version of the study definition documents associated
           with the study design.
         aliases:
-        - documentVersions
+        - documentVersionIds
         range: StudyDefinitionDocumentVersion
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
       biospecimen_retentions:
         annotations:
           source_attribute_name:
@@ -1386,10 +1276,10 @@ classes:
         aliases:
         - eligibilityCriteria
         range: EligibilityCriterion
-        required: false
+        required: true
         multivalued: true
-        inlined: false
         inlined_as_list: true
+        minimum_cardinality: 1
       analysis_populations:
         annotations:
           source_attribute_name:
@@ -1398,83 +1288,10 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: analysisPopulations
-        description: The Analysis Populations for the study
+        description: The AnalysisPopulation instances of the StudyDesign (API relationship).
         aliases:
         - analysisPopulations
         range: AnalysisPopulation
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      biomedical_concepts:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: biomedicalConcepts
-          source_slot_name:
-            tag: source_slot_name
-            value: biomedicalConcepts
-        description: The biomedical concepts used in the study design.
-        aliases:
-        - biomedicalConcepts
-        range: BiomedicalConcept
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      bc_categories:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: bcCategories
-          source_slot_name:
-            tag: source_slot_name
-            value: bcCategories
-        description: The biomedical concept categories used in the study design.
-        aliases:
-        - bcCategories
-        range: BiomedicalConceptCategory
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      bc_surrogates:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: bcSurrogates
-          source_slot_name:
-            tag: source_slot_name
-            value: bcSurrogates
-        description: The biomedical concept surrogates used in the study design.
-        aliases:
-        - bcSurrogates
-        range: BiomedicalConceptSurrogate
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      dictionaries:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: dictionaries
-          source_slot_name:
-            tag: source_slot_name
-            value: dictionaries
-        description: The dictionaries used in the study design.
-        range: SyntaxTemplateDictionary
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      eligibility_criterion_items:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: eligibilityCriterionItems
-          source_slot_name:
-            tag: source_slot_name
-            value: eligibilityCriterionItems
-        description: The eligibility criteria of the study version.
-        aliases:
-        - eligibilityCriterionItems
-        range: EligibilityCriterionItem
         required: false
         multivalued: true
         inlined_as_list: true
@@ -1619,29 +1436,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: populationIds
-        description: An API attribute added for populations
-        title: API Attribute for populations
-        aliases:
-        - populationIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      populations:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: populations
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: populations
         description: A USDM relationship between the StudyArm and PopulationDefinition
           classes which identifies the set of populations associated with the study
           arm.
+        aliases:
+        - populationIds
         range: PopulationDefinition
         required: false
         multivalued: true
         inlined: false
-        inlined_as_list: true
   StudyCell:
     definition_uri: ncit:C188810
     description: A partitioning of a study arm into individual pieces, which are associated
@@ -1660,14 +1466,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: armId
-        description: An API attribute added for arm
-        title: API Attribute for arm
+          uml_role:
+            tag: uml_role
+            value: arm
+        description: A USDM relationship between the StudyCell and StudyArm classes
+          which identifies the study arm associated with a study cell.
         aliases:
         - armId
-        range: string
+        range: StudyArm
         required: true
         multivalued: false
-        inlined: true
+        inlined: false
       epoch_id:
         annotations:
           source_attribute_name:
@@ -1676,14 +1485,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: epochId
-        description: An API attribute added for epoch
-        title: API Attribute for epoch
+          uml_role:
+            tag: uml_role
+            value: epoch
+        description: A USDM relationship between the StudyCell and StudyEpoch classes
+          which identifies the study epoch associated with a study cell.
         aliases:
         - epochId
-        range: string
+        range: StudyEpoch
         required: true
         multivalued: false
-        inlined: true
+        inlined: false
       element_ids:
         annotations:
           source_attribute_name:
@@ -1692,56 +1504,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: elementIds
-        description: An API attribute added for elements
-        title: API Attribute for elements
-        aliases:
-        - elementIds
-        range: string
-        required: true
-        multivalued: true
-        inlined_as_list: true
-      arm:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: arm
-          source_slot_name:
-            tag: source_slot_name
-            value: arm
-        description: A USDM relationship between the StudyCell and StudyArm classes
-          which identifies the study arm associated with a study cell.
-        range: StudyArm
-        required: false
-        multivalued: false
-        inlined: true
-      epoch:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: epoch
-          source_slot_name:
-            tag: source_slot_name
-            value: epoch
-        description: A USDM relationship between the StudyCell and StudyEpoch classes
-          which identifies the study epoch associated with a study cell.
-        range: StudyEpoch
-        required: false
-        multivalued: false
-        inlined: true
-      elements:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: elements
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: elements
         description: A USDM relationship between the StudyCell and StudyElement classes
           which identifies the set of study elements associated with the study cell.
+        aliases:
+        - elementIds
         range: StudyElement
-        required: false
+        required: true
         multivalued: true
-        inlined_as_list: true
+        inlined: false
+        minimum_cardinality: 1
   StudyEpoch:
     definition_uri: ncit:C71738
     description: A named time period defined in the protocol, wherein a study activity
@@ -1847,13 +1621,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: previousId
-        description: An API attribute added for previous
-        title: API Attribute for previous
+          uml_role:
+            tag: uml_role
+            value: previous
+        description: A USDM relationship within the StudyEpoch class which identifies
+          the study epoch that chronologically precedes the current study epoch.
         aliases:
         - previousId
-        range: string
+        range: StudyEpoch
+        required: false
         multivalued: false
-        inlined: true
+        inlined: false
       next_id:
         annotations:
           source_attribute_name:
@@ -1862,41 +1640,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: nextId
-        description: An API attribute added for next
-        title: API Attribute for next
-        aliases:
-        - nextId
-        range: string
-        multivalued: false
-        inlined: true
-      previous:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: previous
-          source_slot_name:
-            tag: source_slot_name
-            value: previous
-        description: A USDM relationship within the StudyEpoch class which identifies
-          the study epoch that chronologically precedes the current study epoch.
-        range: StudyEpoch
-        required: false
-        multivalued: false
-        inlined: true
-      next:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: next
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: next
         description: A USDM relationship within the StudyEpoch class which identifies
           the study epoch that chronologically follows the current study epoch.
+        aliases:
+        - nextId
         range: StudyEpoch
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   StudyElement:
     definition_uri: ncit:C142735
     description: 'A basic building block for time within a clinical study comprising
@@ -1969,21 +1723,6 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
-      study_intervention_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: studyInterventionIds
-          source_slot_name:
-            tag: source_slot_name
-            value: studyInterventionIds
-        description: An API attribute added for studyInterventions
-        title: API Attribute for studyInterventions
-        aliases:
-        - studyInterventionIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
       transition_start_rule:
         annotations:
           source_attribute_name:
@@ -2018,23 +1757,26 @@ classes:
         required: false
         multivalued: false
         inlined: true
-      study_interventions:
+      study_intervention_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: studyInterventions
+            value: studyInterventionIds
           source_slot_name:
             tag: source_slot_name
+            value: studyInterventionIds
+          uml_role:
+            tag: uml_role
             value: studyInterventions
         description: A USDM relationship between the StudyElement and StudyIntervention
           classes which identifies the set of study interventions associated with
           the study element.
         aliases:
-        - studyInterventions
+        - studyInterventionIds
         range: StudyIntervention
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
   TransitionRule:
     definition_uri: ncit:C82567
     description: A guide that governs the allocation of subjects to operational options
@@ -2245,51 +1987,6 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
-      previous_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: previousId
-          source_slot_name:
-            tag: source_slot_name
-            value: previousId
-        description: An API attribute added for previous
-        title: API Attribute for previous
-        aliases:
-        - previousId
-        range: string
-        multivalued: false
-        inlined: true
-      next_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: nextId
-          source_slot_name:
-            tag: source_slot_name
-            value: nextId
-        description: An API attribute added for next
-        title: API Attribute for next
-        aliases:
-        - nextId
-        range: string
-        multivalued: false
-        inlined: true
-      scheduled_at_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: scheduledAtId
-          source_slot_name:
-            tag: source_slot_name
-            value: scheduledAtId
-        description: An API attribute added for scheduledAt
-        title: API Attribute for scheduledAt
-        aliases:
-        - scheduledAtId
-        range: string
-        multivalued: false
-        inlined: true
       transition_end_rule:
         annotations:
           source_attribute_name:
@@ -2324,50 +2021,63 @@ classes:
         required: false
         multivalued: false
         inlined: true
-      previous:
+      previous_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: previous
+            value: previousId
           source_slot_name:
             tag: source_slot_name
+            value: previousId
+          uml_role:
+            tag: uml_role
             value: previous
         description: A USDM relationship within the Encounter class which identifies
           the encounter that chronologically precedes the current encounter.
+        aliases:
+        - previousId
         range: Encounter
         required: false
         multivalued: false
-        inlined: true
-      next:
+        inlined: false
+      next_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: next
+            value: nextId
           source_slot_name:
             tag: source_slot_name
+            value: nextId
+          uml_role:
+            tag: uml_role
             value: next
         description: A USDM relationship within the Encounter class which identifies
           the encounter that chronologically follows the current encounter.
+        aliases:
+        - nextId
         range: Encounter
         required: false
         multivalued: false
-        inlined: true
-      scheduled_at:
+        inlined: false
+      scheduled_at_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: scheduledAt
+            value: scheduledAtId
           source_slot_name:
             tag: source_slot_name
+            value: scheduledAtId
+          uml_role:
+            tag: uml_role
             value: scheduledAt
         description: A USDM relationship between the Encounter and Timing classes
           which provides information related to the scheduled timing of an encounter.
         aliases:
-        - scheduledAt
+        - scheduledAtId
         range: Timing
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   ScheduleTimeline:
     definition_uri: ncit:C201348
     description: A chronological schedule of planned temporal events.
@@ -2476,22 +2186,6 @@ classes:
         range: Duration
         multivalued: false
         inlined: true
-      entry_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: entryId
-          source_slot_name:
-            tag: source_slot_name
-            value: entryId
-        description: An API attribute added for entry
-        title: API Attribute for entry
-        aliases:
-        - entryId
-        range: string
-        required: true
-        multivalued: false
-        inlined: true
       instances:
         annotations:
           source_attribute_name:
@@ -2525,24 +2219,26 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
-      entry:
+      entry_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: entry
+            value: entryId
           source_slot_name:
             tag: source_slot_name
+            value: entryId
+          uml_role:
+            tag: uml_role
             value: entry
         description: A USDM relationship between the ScheduleTimeline and ScheduledInstance
           classes which defines the entry into a scheduled instance (e.g., scheduled
           activity instances or scheduled decision instances) for a timeline.
-        required: false
+        aliases:
+        - entryId
+        range: ScheduledInstance
+        required: true
         multivalued: false
-        inlined: true
-        any_of:
-        - range: ScheduledInstance
-        - range: ScheduledDecisionInstance
-        - range: ScheduledActivityInstance
+        inlined: false
       timings:
         annotations:
           source_attribute_name:
@@ -2621,13 +2317,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: defaultConditionId
-        description: An API attribute added for defaultCondition
-        title: API Attribute for defaultCondition
+          uml_role:
+            tag: uml_role
+            value: defaultCondition
+        description: A USDM relationship within the ScheduledInstance class which
+          identifies the default condition within a scheduled instance.
         aliases:
         - defaultConditionId
-        range: string
+        range: ScheduledInstance
+        required: false
         multivalued: false
-        inlined: true
+        inlined: false
       epoch_id:
         annotations:
           source_attribute_name:
@@ -2636,46 +2336,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: epochId
-        description: An API attribute added for epoch
-        title: API Attribute for epoch
-        aliases:
-        - epochId
-        range: string
-        multivalued: false
-        inlined: true
-      default_condition:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: defaultCondition
-          source_slot_name:
-            tag: source_slot_name
-            value: defaultCondition
-        description: A USDM relationship within the ScheduledInstance class which
-          identifies the default condition within a scheduled instance.
-        aliases:
-        - defaultCondition
-        required: false
-        multivalued: false
-        inlined: true
-        any_of:
-        - range: ScheduledInstance
-        - range: ScheduledDecisionInstance
-        - range: ScheduledActivityInstance
-      epoch:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: epoch
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: epoch
         description: A USDM relationship between the ScheduledInstance and StudyEpoch
           classes which identifies the study epoch associated with a scheduled instance.
+        aliases:
+        - epochId
         range: StudyEpoch
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   ScheduledDecisionInstance:
     definition_uri: ncit:C201351
     description: A scheduled occurrence of a decision event.
@@ -2701,6 +2372,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
   ScheduledActivityInstance:
     definition_uri: ncit:C201350
     description: A scheduled occurrence of an activity event.
@@ -2717,13 +2389,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: activityIds
-        description: An API attribute added for activities
-        title: API Attribute for activities
+          uml_role:
+            tag: uml_role
+            value: activities
+        description: A USDM relationship between the ScheduledActivityInstance and
+          Activity classes which identifies the set of activities associated with
+          a scheduled activity instance.
         aliases:
         - activityIds
-        range: string
+        range: Activity
+        required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
       encounter_id:
         annotations:
           source_attribute_name:
@@ -2732,13 +2409,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: encounterId
-        description: An API attribute added for encounter
-        title: API Attribute for encounter
+          uml_role:
+            tag: uml_role
+            value: encounter
+        description: A USDM relationship between the ScheduledActivityInstance and
+          Encounter classes which defines the subject encounter associated with the
+          ScheduleActivityInstance.
         aliases:
         - encounterId
-        range: string
+        range: Encounter
+        required: false
         multivalued: false
-        inlined: true
+        inlined: false
       timeline_id:
         annotations:
           source_attribute_name:
@@ -2747,13 +2429,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: timelineId
-        description: An API attribute added for timeline
-        title: API Attribute for timeline
+          uml_role:
+            tag: uml_role
+            value: timeline
+        description: A USDM relationship between the ScheduledActivityInstance and
+          ScheduleTimeline classes which provides the details associated with an instance
+          of a scheduled timeline related to a scheduled activity instance.
         aliases:
         - timelineId
-        range: string
+        range: ScheduleTimeline
+        required: false
         multivalued: false
-        inlined: true
+        inlined: false
       timeline_exit_id:
         annotations:
           source_attribute_name:
@@ -2762,75 +2449,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: timelineExitId
-        description: An API attribute added for timelineExit
-        title: API Attribute for timelineExit
-        aliases:
-        - timelineExitId
-        range: string
-        multivalued: false
-        inlined: true
-      activities:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: activities
-          source_slot_name:
-            tag: source_slot_name
-            value: activities
-        description: A USDM relationship between the ScheduledActivityInstance and
-          Activity classes which identifies the set of activities associated with
-          a scheduled activity instance.
-        range: Activity
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      encounter:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: encounter
-          source_slot_name:
-            tag: source_slot_name
-            value: encounter
-        description: A USDM relationship between the ScheduledActivityInstance and
-          Encounter classes which defines the subject encounter associated with the
-          ScheduleActivityInstance.
-        range: Encounter
-        required: false
-        multivalued: false
-        inlined: true
-      timeline:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: timeline
-          source_slot_name:
-            tag: source_slot_name
-            value: timeline
-        description: A USDM relationship between the ScheduledActivityInstance and
-          ScheduleTimeline classes which provides the details associated with an instance
-          of a scheduled timeline related to a scheduled activity instance.
-        range: ScheduleTimeline
-        required: false
-        multivalued: false
-        inlined: true
-      timeline_exit:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: timelineExit
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: timelineExit
         description: A USDM relationship between the ScheduledActivityInstance and
           ScheduleTimelineExit classes which provides the details associated with
           the exit from a timeline related to a scheduled activity instance.
         aliases:
-        - timelineExit
+        - timelineExitId
         range: ScheduleTimelineExit
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   ScheduleTimelineExit:
     definition_uri: ncit:C201349
     description: To go out of or leave the schedule timeline.
@@ -2910,111 +2540,6 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
-      bc_surrogate_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: bcSurrogateIds
-          source_slot_name:
-            tag: source_slot_name
-            value: bcSurrogateIds
-        description: An API attribute added for bcSurrogates
-        title: API Attribute for bcSurrogates
-        aliases:
-        - bcSurrogateIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      bc_category_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: bcCategoryIds
-          source_slot_name:
-            tag: source_slot_name
-            value: bcCategoryIds
-        description: An API attribute added for bcCategories
-        title: API Attribute for bcCategories
-        aliases:
-        - bcCategoryIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      biomedical_concept_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: biomedicalConceptIds
-          source_slot_name:
-            tag: source_slot_name
-            value: biomedicalConceptIds
-        description: An API attribute added for biomedicalConcepts
-        title: API Attribute for biomedicalConcepts
-        aliases:
-        - biomedicalConceptIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      previous_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: previousId
-          source_slot_name:
-            tag: source_slot_name
-            value: previousId
-        description: An API attribute added for previous
-        title: API Attribute for previous
-        aliases:
-        - previousId
-        range: string
-        multivalued: false
-        inlined: true
-      next_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: nextId
-          source_slot_name:
-            tag: source_slot_name
-            value: nextId
-        description: An API attribute added for next
-        title: API Attribute for next
-        aliases:
-        - nextId
-        range: string
-        multivalued: false
-        inlined: true
-      timeline_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: timelineId
-          source_slot_name:
-            tag: source_slot_name
-            value: timelineId
-        description: An API attribute added for timeline
-        title: API Attribute for timeline
-        aliases:
-        - timelineId
-        range: string
-        multivalued: false
-        inlined: true
-      child_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: childIds
-          source_slot_name:
-            tag: source_slot_name
-            value: childIds
-        description: An API attribute added for children
-        title: API Attribute for children
-        aliases:
-        - childIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
       defined_procedures:
         annotations:
           source_attribute_name:
@@ -3031,114 +2556,143 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
-      bc_surrogates:
+      bc_surrogate_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: bcSurrogates
+            value: bcSurrogateIds
           source_slot_name:
             tag: source_slot_name
+            value: bcSurrogateIds
+          uml_role:
+            tag: uml_role
             value: bcSurrogates
         description: A USDM relationship between the Activity and BiomedicalConceptSurrogate
           classes which identifies the set of biomedical concept surrogates associated
           with the activity.
         aliases:
-        - bcSurrogates
+        - bcSurrogateIds
         range: BiomedicalConceptSurrogate
         required: false
         multivalued: true
-        inlined_as_list: true
-      bc_categories:
+        inlined: false
+      bc_category_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: bcCategories
+            value: bcCategoryIds
           source_slot_name:
             tag: source_slot_name
+            value: bcCategoryIds
+          uml_role:
+            tag: uml_role
             value: bcCategories
         description: A USDM relationship between the Activity and BiomedicalConceptCategory
           classes which identifies the set of biomedical concept categories associated
           with the activity.
         aliases:
-        - bcCategories
+        - bcCategoryIds
         range: BiomedicalConceptCategory
         required: false
         multivalued: true
-        inlined_as_list: true
-      biomedical_concepts:
+        inlined: false
+      biomedical_concept_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: biomedicalConcepts
+            value: biomedicalConceptIds
           source_slot_name:
             tag: source_slot_name
+            value: biomedicalConceptIds
+          uml_role:
+            tag: uml_role
             value: biomedicalConcepts
         description: A USDM relationship between the Activity and BiomedicalConcept
           classes which identifies the set of biomedical concepts associated with
           the activity.
         aliases:
-        - biomedicalConcepts
+        - biomedicalConceptIds
         range: BiomedicalConcept
         required: false
         multivalued: true
-        inlined_as_list: true
-      previous:
+        inlined: false
+      previous_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: previous
+            value: previousId
           source_slot_name:
             tag: source_slot_name
+            value: previousId
+          uml_role:
+            tag: uml_role
             value: previous
         description: A USDM relationship within the Activity class which identifies
           the activity that precedes the current activity in the display order.
+        aliases:
+        - previousId
         range: Activity
         required: false
         multivalued: false
-        inlined: true
-      next:
+        inlined: false
+      next_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: next
+            value: nextId
           source_slot_name:
             tag: source_slot_name
+            value: nextId
+          uml_role:
+            tag: uml_role
             value: next
         description: A USDM relationship within the Activity class which identifies
           the activity that follows the current activity in the display order.
+        aliases:
+        - nextId
         range: Activity
         required: false
         multivalued: false
-        inlined: true
-      timeline:
+        inlined: false
+      timeline_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: timeline
+            value: timelineId
           source_slot_name:
             tag: source_slot_name
+            value: timelineId
+          uml_role:
+            tag: uml_role
             value: timeline
         description: A USDM relationship between the Activity and ScheduleTimeline
           classes which provides the details associated with an instance of the scheduled
           timeline related to the activity.
+        aliases:
+        - timelineId
         range: ScheduleTimeline
         required: false
         multivalued: false
-        inlined: true
-      children:
+        inlined: false
+      child_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: children
+            value: childIds
           source_slot_name:
             tag: source_slot_name
+            value: childIds
+          uml_role:
+            tag: uml_role
             value: children
         description: A USDM relationship within the Activity class which identifies
           the set of child activities associated with an activity.
+        aliases:
+        - childIds
         range: Activity
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
   Procedure:
     definition_uri: ncit:C98769
     description: Any activity performed by manual and/or instrumental means for the
@@ -3250,30 +2804,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: studyInterventionId
-        description: An API attribute added for studyIntervention
-        title: API Attribute for studyIntervention
-        aliases:
-        - studyInterventionId
-        range: string
-        multivalued: false
-        inlined: true
-      study_intervention:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: studyIntervention
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: studyIntervention
         description: A USDM relationship between the Procedure and StudyInterventionclasses
           which provides the details associated with an instance of an intervention
           performed during the conduct of a procedure.
         aliases:
-        - studyIntervention
+        - studyInterventionId
         range: StudyIntervention
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   BiomedicalConceptSurrogate:
     definition_uri: ncit:C207590
     description: A concept that substitutes for a standard biomedical concept from
@@ -3454,13 +2996,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: childIds
-        description: An API attribute added for children
-        title: API Attribute for children
+          uml_role:
+            tag: uml_role
+            value: children
+        description: A USDM relationship within the BiomedicalConceptCategory class
+          which identifies the set of child categories of a biomedical concept.
         aliases:
         - childIds
-        range: string
+        range: BiomedicalConceptCategory
+        required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
       member_ids:
         annotations:
           source_attribute_name:
@@ -3469,42 +3015,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: memberIds
-        description: An API attribute added for members
-        title: API Attribute for members
-        aliases:
-        - memberIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      children:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: children
-          source_slot_name:
-            tag: source_slot_name
-            value: children
-        description: A USDM relationship within the BiomedicalConceptCategory class
-          which identifies the set of child categories of a biomedical concept.
-        range: BiomedicalConceptCategory
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      members:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: members
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: members
         description: A USDM relationship between the BiomedicalConceptCategory and
           BiomedicalConcept classes which identifies the set of biomedical concept
           members associated with the biomedical concept category.
+        aliases:
+        - memberIds
         range: BiomedicalConcept
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
   BiomedicalConcept:
     definition_uri: ncit:C201345
     description: A unit of biomedical knowledge created from a unique combination
@@ -4037,14 +3559,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: relativeFromScheduledInstanceId
-        description: An API attribute added for relativeFromScheduledInstance
-        title: API Attribute for relativeFromScheduledInstance
+          uml_role:
+            tag: uml_role
+            value: relativeFromScheduledInstance
+        description: A USDM relationship between the Timing and ScheduledInstance
+          classes which identifies the scheduled instance (e.g., scheduled activity
+          instances or scheduled decision instances) to which the timing applies.
         aliases:
         - relativeFromScheduledInstanceId
-        range: string
+        range: ScheduledInstance
         required: true
         multivalued: false
-        inlined: true
+        inlined: false
       relative_to_scheduled_instance_id:
         annotations:
           source_attribute_name:
@@ -4053,54 +3579,19 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: relativeToScheduledInstanceId
-        description: An API attribute added for relativeToScheduledInstance
-        title: API Attribute for relativeToScheduledInstance
-        aliases:
-        - relativeToScheduledInstanceId
-        range: string
-        multivalued: false
-        inlined: true
-      relative_from_scheduled_instance:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: relativeFromScheduledInstance
-          source_slot_name:
-            tag: source_slot_name
-            value: relativeFromScheduledInstance
-        description: A USDM relationship between the Timing and ScheduledInstance
-          classes which identifies the scheduled instance (e.g., scheduled activity
-          instances or scheduled decision instances) to which the timing applies.
-        aliases:
-        - relativeFromScheduledInstance
-        required: false
-        multivalued: false
-        inlined: true
-        any_of:
-        - range: ScheduledInstance
-        - range: ScheduledDecisionInstance
-        - range: ScheduledActivityInstance
-      relative_to_scheduled_instance:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: relativeToScheduledInstance
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: relativeToScheduledInstance
         description: A USDM relationship between the Timing and ScheduledInstance
           classes which identifies the scheduled instance (e.g., scheduled activity
           instances or scheduled decision instances) to which the timing is relative
           to.
         aliases:
-        - relativeToScheduledInstance
+        - relativeToScheduledInstanceId
+        range: ScheduledInstance
         required: false
         multivalued: false
-        inlined: true
-        any_of:
-        - range: ScheduledInstance
-        - range: ScheduledDecisionInstance
-        - range: ScheduledActivityInstance
+        inlined: false
   Indication:
     definition_uri: ncit:C41184
     description: The disease or condition the intervention will diagnose, treat, prevent,
@@ -4461,54 +3952,6 @@ classes:
         range: CommentAnnotation
         multivalued: true
         inlined_as_list: true
-      intervention_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: interventionIds
-          source_slot_name:
-            tag: source_slot_name
-            value: interventionIds
-        description: An API attribute added for interventions
-        title: API Attribute for interventions
-        aliases:
-        - interventionIds
-        range: string
-        required: true
-        multivalued: true
-        inlined_as_list: true
-      variable_of_interest_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: variableOfInterestId
-          source_slot_name:
-            tag: source_slot_name
-            value: variableOfInterestId
-        description: An API attribute added for variableOfInterest
-        title: API Attribute for variableOfInterest
-        aliases:
-        - variableOfInterestId
-        range: string
-        required: true
-        multivalued: false
-        inlined: true
-      analysis_population_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: analysisPopulationId
-          source_slot_name:
-            tag: source_slot_name
-            value: analysisPopulationId
-        description: An API attribute added for analysisPopulation
-        title: API Attribute for analysisPopulation
-        aliases:
-        - analysisPopulationId
-        range: string
-        required: true
-        multivalued: false
-        inlined: true
       intercurrent_events:
         annotations:
           source_attribute_name:
@@ -4526,55 +3969,68 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
-      interventions:
+        minimum_cardinality: 1
+      intervention_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: interventions
+            value: interventionIds
           source_slot_name:
             tag: source_slot_name
+            value: interventionIds
+          uml_role:
+            tag: uml_role
             value: interventions
         description: A USDM relationship between the Estimand and StudyIntervention
           classes which identifies the set of study interventions associated with
           the Estimand.
+        aliases:
+        - interventionIds
         range: StudyIntervention
-        required: false
+        required: true
         multivalued: true
-        inlined_as_list: true
-      variable_of_interest:
+        inlined: false
+        minimum_cardinality: 1
+      variable_of_interest_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: variableOfInterest
+            value: variableOfInterestId
           source_slot_name:
             tag: source_slot_name
+            value: variableOfInterestId
+          uml_role:
+            tag: uml_role
             value: variableOfInterest
         description: A USDM relationship between the Estimand and Endpoint classes
           which provides the details associated with an instance of the variable of
           interest within a study endpoint used to partially define a study estimand.
         aliases:
-        - variableOfInterest
+        - variableOfInterestId
         range: Endpoint
-        required: false
+        required: true
         multivalued: false
-        inlined: true
-      analysis_population:
+        inlined: false
+      analysis_population_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: analysisPopulation
+            value: analysisPopulationId
           source_slot_name:
             tag: source_slot_name
+            value: analysisPopulationId
+          uml_role:
+            tag: uml_role
             value: analysisPopulation
         description: A USDM relationship between the Estimand and AnalysisPopulation
           classes which provides the details associated with an instance of the analysis
           population used to partially define a study estimand.
         aliases:
-        - analysisPopulation
+        - analysisPopulationId
         range: AnalysisPopulation
-        required: false
+        required: true
         multivalued: false
-        inlined: true
+        inlined: false
   NarrativeContent:
     definition_uri: ncit:C207592
     description: The container that holds an instance of unstructured text and which
@@ -4681,13 +4137,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: childIds
-        description: An API attribute added for children
-        title: API Attribute for children
+          uml_role:
+            tag: uml_role
+            value: children
+        description: A USDM relationship within the NarrativeContent class which identifies
+          the set of child content associated with an instance of narrative content.
         aliases:
         - childIds
-        range: string
+        range: NarrativeContent
+        required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
       next_id:
         annotations:
           source_attribute_name:
@@ -4696,13 +4156,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: nextId
-        description: An API attribute added for next
-        title: API Attribute for next
+          uml_role:
+            tag: uml_role
+            value: next
+        description: A USDM relationship within the NarrativeContent class which identifies
+          the narrative content that follows the current narrative content in the
+          display order.
         aliases:
         - nextId
-        range: string
+        range: NarrativeContent
+        required: false
         multivalued: false
-        inlined: true
+        inlined: false
       previous_id:
         annotations:
           source_attribute_name:
@@ -4711,13 +4176,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: previousId
-        description: An API attribute added for previous
-        title: API Attribute for previous
+          uml_role:
+            tag: uml_role
+            value: previous
+        description: A USDM relationship within the NarrativeContent class which identifies
+          the narrative content that precedes the current narrative content in the
+          display order.
         aliases:
         - previousId
-        range: string
+        range: NarrativeContent
+        required: false
         multivalued: false
-        inlined: true
+        inlined: false
       content_item_id:
         annotations:
           source_attribute_name:
@@ -4726,74 +4196,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: contentItemId
-        description: An API attribute added for contentItem
-        title: API Attribute for contentItem
-        aliases:
-        - contentItemId
-        range: string
-        multivalued: false
-        inlined: true
-      children:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: children
-          source_slot_name:
-            tag: source_slot_name
-            value: children
-        description: A USDM relationship within the NarrativeContent class which identifies
-          the set of child content associated with an instance of narrative content.
-        range: NarrativeContent
-        required: false
-        multivalued: true
-        inlined_as_list: true
-      next:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: next
-          source_slot_name:
-            tag: source_slot_name
-            value: next
-        description: A USDM relationship within the NarrativeContent class which identifies
-          the narrative content that follows the current narrative content in the
-          display order.
-        range: NarrativeContent
-        required: false
-        multivalued: false
-        inlined: true
-      previous:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: previous
-          source_slot_name:
-            tag: source_slot_name
-            value: previous
-        description: A USDM relationship within the NarrativeContent class which identifies
-          the narrative content that precedes the current narrative content in the
-          display order.
-        range: NarrativeContent
-        required: false
-        multivalued: false
-        inlined: true
-      content_item:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: contentItem
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: contentItem
         description: A USDM relationship between the NarrativeContent and NarrativeContentItem
           classes which identifies the content item associated with the narrative
           content.
         aliases:
-        - contentItem
+        - contentItemId
         range: NarrativeContentItem
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   PopulationDefinition:
     definition_uri: ncit:C207593
     description: A concise explanation of the meaning of a population.
@@ -4873,6 +4287,7 @@ classes:
         range: Code
         multivalued: true
         inlined_as_list: true
+        maximum_cardinality: 2
       includes_healthy_subjects:
         definition_uri: ncit:C207518
         annotations:
@@ -4965,28 +4380,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: criterionIds
-        description: An API attribute added for criteria
-        title: API Attribute for criteria
-        aliases:
-        - criterionIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      criteria:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: criteria
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: criteria
         description: A USDM relationship between the PopulationDefinition and EligibilityCriterion
           classes which identifies the set of eligibility criteria associated with
           the population definition.
+        aliases:
+        - criterionIds
         range: EligibilityCriterion
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
   Objective:
     definition_uri: ncit:C142450
     description: The reason for performing a study in terms of the scientific questions
@@ -5182,30 +4587,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: subsetOfIds
-        description: An API attribute added for subsetOf
-        title: API Attribute for subsetOf
-        aliases:
-        - subsetOfIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      subset_of:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: subsetOf
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: subsetOf
         description: A USDM relationship between the AnalysisPopulation and PopulationDefinition
           classes which identifies the population definition of which the analysis
           population is a subset.
         aliases:
-        - subsetOf
+        - subsetOfIds
         range: PopulationDefinition
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
   IntercurrentEvent:
     definition_uri: ncit:C188815
     description: An event(s) occurring after treatment initiation that affects either
@@ -5360,13 +4753,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: nextId
-        description: An API attribute added for next
-        title: API Attribute for next
+          uml_role:
+            tag: uml_role
+            value: next
+        description: A USDM relationship within the EligibilityCriterion class which
+          identifies the eligibility criterion that follows the current eligibility
+          criterion in the display order.
         aliases:
         - nextId
-        range: string
+        range: EligibilityCriterion
+        required: false
         multivalued: false
-        inlined: true
+        inlined: false
       previous_id:
         annotations:
           source_attribute_name:
@@ -5375,13 +4773,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: previousId
-        description: An API attribute added for previous
-        title: API Attribute for previous
+          uml_role:
+            tag: uml_role
+            value: previous
+        description: A USDM relationship within the EligibilityCriterion class which
+          identifies the eligibility criterion that precedes the current eligibility
+          criterion in the display order.
         aliases:
         - previousId
-        range: string
+        range: EligibilityCriterion
+        required: false
         multivalued: false
-        inlined: true
+        inlined: false
       criterion_item_id:
         annotations:
           source_attribute_name:
@@ -5390,60 +4793,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: criterionItemId
-        description: An API attribute added for criterionItem
-        title: API Attribute for criterionItem
-        aliases:
-        - criterionItemId
-        range: string
-        required: true
-        multivalued: false
-        inlined: true
-      next:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: next
-          source_slot_name:
-            tag: source_slot_name
-            value: next
-        description: A USDM relationship within the EligibilityCriterion class which
-          identifies the eligibility criterion that follows the current eligibility
-          criterion in the display order.
-        range: EligibilityCriterion
-        required: false
-        multivalued: false
-        inlined: true
-      previous:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: previous
-          source_slot_name:
-            tag: source_slot_name
-            value: previous
-        description: A USDM relationship within the EligibilityCriterion class which
-          identifies the eligibility criterion that precedes the current eligibility
-          criterion in the display order.
-        range: EligibilityCriterion
-        required: false
-        multivalued: false
-        inlined: true
-      criterion_item:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: criterionItem
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: criterionItem
         description: A USDM relationship between the EligibilityCriterion and EligibilityCriterionItem
           classes which identifies the item belonging to the eligibility criterion.
         aliases:
-        - criterionItem
+        - criterionItemId
         range: EligibilityCriterionItem
-        required: false
+        required: true
         multivalued: false
-        inlined: true
+        inlined: false
   Code:
     definition_uri: ncit:C25162
     description: A symbol or combination of symbols which is assigned to the members
@@ -5661,27 +5021,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: dictionaryId
-        description: An API attribute added for dictionary
-        title: API Attribute for dictionary
-        aliases:
-        - dictionaryId
-        range: string
-        multivalued: false
-        inlined: true
-      dictionary:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: dictionary
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: dictionary
         description: 'A USDM relationship between the SyntaxTemplate and SyntaxTemplateDictionary
           classes which provides the dictionary entry associated with a syntax template. '
+        aliases:
+        - dictionaryId
         range: SyntaxTemplateDictionary
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   SyntaxTemplateDictionary:
     definition_uri: ncit:C207597
     description: A reference source that provides a listing of valid parameter names
@@ -5755,6 +5105,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
   GovernanceDate:
     definition_uri: ncit:C207595
     description: Any of the dates associated with event milestones within a clinical
@@ -5867,6 +5218,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
   StudyDefinitionDocument:
     definition_uri: ncit:C215490
     description: Any physical or electronic document that is related to defining a
@@ -6000,27 +5352,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: childIds
-        description: An API attribute added for children
-        title: API Attribute for children
-        aliases:
-        - childIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      children:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: children
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: children
         description: A USDM relationship within the StudyDefinitionDocument class
           which identifies the set of child documents of a study definition document.
+        aliases:
+        - childIds
         range: StudyDefinitionDocument
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
       versions:
         annotations:
           source_attribute_name:
@@ -6227,21 +5569,6 @@ classes:
         required: true
         multivalued: false
         inlined: true
-      previous_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: previousId
-          source_slot_name:
-            tag: source_slot_name
-            value: previousId
-        description: An API attribute added for previous
-        title: API Attribute for previous
-        aliases:
-        - previousId
-        range: string
-        multivalued: false
-        inlined: true
       primary_reason:
         annotations:
           source_attribute_name:
@@ -6290,20 +5617,25 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
-      previous:
+      previous_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: previous
+            value: previousId
           source_slot_name:
             tag: source_slot_name
+            value: previousId
+          uml_role:
+            tag: uml_role
             value: previous
         description: A USDM relationship within the StudyAmendment class which identifies
           the study amendment that chronologically precedes the current study amendment.
+        aliases:
+        - previousId
         range: StudyAmendment
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
       geographic_scopes:
         annotations:
           source_attribute_name:
@@ -6321,6 +5653,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
       changes:
         annotations:
           source_attribute_name:
@@ -6335,6 +5668,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
       impacts:
         annotations:
           source_attribute_name:
@@ -6546,60 +5880,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: forStudySiteId
-        description: An API attribute added for forStudySite
-        title: API Attribute for forStudySite
-        aliases:
-        - forStudySiteId
-        range: string
-        multivalued: false
-        inlined: true
-      for_geographic_scope_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: forGeographicScopeId
-          source_slot_name:
-            tag: source_slot_name
-            value: forGeographicScopeId
-        description: An API attribute added for forGeographicScope
-        title: API Attribute for forGeographicScope
-        aliases:
-        - forGeographicScopeId
-        range: string
-        multivalued: false
-        inlined: true
-      for_study_cohort_id:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: forStudyCohortId
-          source_slot_name:
-            tag: source_slot_name
-            value: forStudyCohortId
-        description: An API attribute added for forStudyCohort
-        title: API Attribute for forStudyCohort
-        aliases:
-        - forStudyCohortId
-        range: string
-        multivalued: false
-        inlined: true
-      for_study_site:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: forStudySite
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: forStudySite
         description: A USDM relationship between the SubjectEnrollment and StudySite
           classes which identifies the study site to which the subject enrollment
           applies.
         aliases:
-        - forStudySite
+        - forStudySiteId
         range: StudySite
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
       for_geographic_scope:
         annotations:
           source_attribute_name:
@@ -6617,23 +5909,26 @@ classes:
         required: false
         multivalued: false
         inlined: true
-      for_study_cohort:
+      for_study_cohort_id:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: forStudyCohort
+            value: forStudyCohortId
           source_slot_name:
             tag: source_slot_name
+            value: forStudyCohortId
+          uml_role:
+            tag: uml_role
             value: forStudyCohort
         description: A USDM relationship between the SubjectEnrollment and StudyCohort
           classes which identifies the study cohort to which the subject enrollment
           applies.
         aliases:
-        - forStudyCohort
+        - forStudyCohortId
         range: StudyCohort
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   Quantity:
     definition_uri: ncit:C25256
     description: How much there is of something that can be measured; the total amount
@@ -6907,13 +6202,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: administrableProductId
-        description: An API attribute added for administrableProduct
-        title: API Attribute for administrableProduct
+          uml_role:
+            tag: uml_role
+            value: administrableProduct
+        description: A USDM relationship between the Administration and AdministrableProductDefinition
+          classes which identifies the administrable product associated with the administration
+          of the product, agent, or therapy.
         aliases:
         - administrableProductId
-        range: string
+        range: AdministrableProduct
+        required: false
         multivalued: false
-        inlined: true
+        inlined: false
       medical_device_id:
         annotations:
           source_attribute_name:
@@ -6922,47 +6222,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: medicalDeviceId
-        description: An API attribute added for medicalDevice
-        title: API Attribute for medicalDevice
-        aliases:
-        - medicalDeviceId
-        range: string
-        multivalued: false
-        inlined: true
-      administrable_product:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: administrableProduct
-          source_slot_name:
-            tag: source_slot_name
-            value: administrableProduct
-        description: A USDM relationship between the Administration and AdministrableProductDefinition
-          classes which identifies the administrable product associated with the administration
-          of the product, agent, or therapy.
-        aliases:
-        - administrableProduct
-        range: AdministrableProduct
-        required: false
-        multivalued: false
-        inlined: true
-      medical_device:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: medicalDevice
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: medicalDevice
         description: A USDM relationship between the Administration and MedicalDevice
           classes which identifies the medical device associated with an instance
           of product, agent, or therapy administration.
         aliases:
-        - medicalDevice
+        - medicalDeviceId
         range: MedicalDevice
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   StudyDesignPopulation:
     definition_uri: ncit:C142728
     description: The population within the general population to which the study results
@@ -6997,21 +6268,6 @@ classes:
     mixins:
     - Base
     attributes:
-      indication_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: indicationIds
-          source_slot_name:
-            tag: source_slot_name
-            value: indicationIds
-        description: An API attribute added for indications
-        title: API Attribute for indications
-        aliases:
-        - indicationIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
       characteristics:
         annotations:
           source_attribute_name:
@@ -7027,20 +6283,25 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
-      indications:
+      indication_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: indications
+            value: indicationIds
           source_slot_name:
             tag: source_slot_name
+            value: indicationIds
+          uml_role:
+            tag: uml_role
             value: indications
         description: A USDM relationship between the StudyCohort and Indication classes
           which identifies the set of indications associated with the study cohort.
+        aliases:
+        - indicationIds
         range: Indication
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
   Characteristic:
     definition_uri: ncit:C25447
     description: The distinguishing qualities or prominent aspects of an entity.
@@ -7173,13 +6434,24 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: appliesToIds
-        description: An API attribute added for appliesTo
-        title: API Attribute for appliesTo
+          uml_role:
+            tag: uml_role
+            value: appliesTo
+        description: A USDM relationship between the Condition and the Activity, Procedure,
+          BiomedicalConcept, BiomedicalConceptSurrogate, or BiomedicalConceptCategory
+          classes which identifies the procedure, activity, biomedical concept, biomedical
+          concept surrogate, or biomedical concept category that applies to the condition.
         aliases:
         - appliesToIds
-        range: string
+        required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
+        any_of:
+        - range: Activity
+        - range: BiomedicalConcept
+        - range: BiomedicalConceptCategory
+        - range: BiomedicalConceptSurrogate
+        - range: Procedure
       context_ids:
         annotations:
           source_attribute_name:
@@ -7188,57 +6460,20 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: contextIds
-        description: An API attribute added for context
-        title: API Attribute for context
-        aliases:
-        - contextIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      applies_to:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: appliesTo
-          source_slot_name:
-            tag: source_slot_name
-            value: appliesTo
-        description: A USDM relationship between the Condition and the Activity, Procedure,
-          BiomedicalConcept, BiomedicalConceptSurrogate, or BiomedicalConceptCategory
-          classes which identifies the procedure, activity, biomedical concept, biomedical
-          concept surrogate, or biomedical concept category that applies to the condition.
-        aliases:
-        - appliesTo
-        required: false
-        multivalued: true
-        inlined: false
-        inlined_as_list: true
-        any_of:
-        - range: Activity
-        - range: BiomedicalConcept
-        - range: BiomedicalConceptCategory
-        - range: BiomedicalConceptSurrogate
-        - range: Procedure
-      context:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: context
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: context
         description: A USDM relationship between the Condition and the ScheduledActivityInstance
           or Activity classes which identifies the scheduled activity instance or
           activity to which the condition belongs.
+        aliases:
+        - contextIds
         required: false
         multivalued: true
         inlined: false
-        inlined_as_list: true
         any_of:
         - range: Activity
         - range: ScheduledActivityInstance
-        - range: ScheduledDecisionInstance
-        - range: ScheduledInstance
   StudySite:
     definition_uri: ncit:C80403
     description: The location at which a study investigator conducts study activities.
@@ -7387,34 +6622,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: conditionTargetId
-        description: An API attribute added for conditionTarget
-        title: API Attribute for conditionTarget
-        aliases:
-        - conditionTargetId
-        range: string
-        required: true
-        multivalued: false
-        inlined: true
-      condition_target:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: conditionTarget
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: conditionTarget
         description: A USDM relationship between the ConditionAssignment and ScheduledInstance
           classes which identifies the scheduled instance associated with the condition
           assignment.
         aliases:
-        - conditionTarget
-        required: false
+        - conditionTargetId
+        range: ScheduledInstance
+        required: true
         multivalued: false
-        inlined: true
-        any_of:
-        - range: ScheduledInstance
-        - range: ScheduledDecisionInstance
-        - range: ScheduledActivityInstance
+        inlined: false
   ParameterMap:
     definition_uri: ncit:C207456
     description: The paired name and value for a given parameter.
@@ -7925,6 +7144,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
       reference_substance:
         annotations:
           source_attribute_name:
@@ -8256,42 +7476,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: organizationIds
-        description: An API attribute added for organizations
-        title: API Attribute for organizations
-        aliases:
-        - organizationIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      applies_to_ids:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: appliesToIds
-          source_slot_name:
-            tag: source_slot_name
-            value: appliesToIds
-        description: An API attribute added for appliesTo
-        title: API Attribute for appliesTo
-        aliases:
-        - appliesToIds
-        range: string
-        multivalued: true
-        inlined_as_list: true
-      organizations:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: organizations
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: organizations
         description: A USDM relationship between the StudyRole and Organization classes
           which identifies the set of organizations associated with the study role.
+        aliases:
+        - organizationIds
         range: Organization
         required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
       masking:
         annotations:
           source_attribute_name:
@@ -8323,23 +7518,25 @@ classes:
         required: false
         multivalued: true
         inlined_as_list: true
-      applies_to:
+      applies_to_ids:
         annotations:
           source_attribute_name:
             tag: source_attribute_name
-            value: appliesTo
+            value: appliesToIds
           source_slot_name:
             tag: source_slot_name
+            value: appliesToIds
+          uml_role:
+            tag: uml_role
             value: appliesTo
         description: A USDM relationship between the StudyRole and either StudyVersion
           or StudyDesign classes that identifies the study version or study design
           to which the study role applies.
         aliases:
-        - appliesTo
+        - appliesToIds
         required: false
         multivalued: true
         inlined: false
-        inlined_as_list: true
         any_of:
         - range: StudyDesign
         - range: StudyVersion
@@ -8444,27 +7641,17 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: organizationId
-        description: An API attribute added for organization
-        title: API Attribute for organization
-        aliases:
-        - organizationId
-        range: string
-        multivalued: false
-        inlined: true
-      organization:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: organization
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: organization
         description: A USDM relationship between the AssignedPerson and Organization
           classes that identifies that organization to which the assigned person belongs.
+        aliases:
+        - organizationId
         range: Organization
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
   StudyChange:
     definition_uri: ncit:C215498
     description: The act of alteration or modification to a study.
@@ -8569,6 +7756,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
   StudyAmendmentImpact:
     definition_uri: ncit:C215500
     description: The effect or consequence of an amendment on some aspect of the study.
@@ -8701,31 +7889,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: appliesToId
-        description: An API attribute added for appliesTo
-        title: API Attribute for appliesTo
-        aliases:
-        - appliesToId
-        range: string
-        required: true
-        multivalued: false
-        inlined: true
-      applies_to:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: appliesTo
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: appliesTo
         description: A USDM relationship between the DocumentContentReference and
           StudyDefinitionDocument classes which identifies the study definition document
           to which the document content reference applies.
         aliases:
-        - appliesTo
+        - appliesToId
         range: StudyDefinitionDocument
-        required: false
+        required: true
         multivalued: false
-        inlined: true
+        inlined: false
   MedicalDevice:
     definition_uri: ncit:C16830
     description: Any instrument, apparatus, implement, machine, appliance, implant,
@@ -8863,30 +8038,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: embeddedProductId
-        description: An API attribute added for embeddedProduct
-        title: API Attribute for embeddedProduct
-        aliases:
-        - embeddedProductId
-        range: string
-        multivalued: false
-        inlined: true
-      embedded_product:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: embeddedProduct
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: embeddedProduct
         description: A USDM relationship between the MedicalDevice and AdministrableProduct
           classes which identifies the administrable product that is an integral component
           of the medical device.
         aliases:
-        - embeddedProduct
+        - embeddedProductId
         range: AdministrableProduct
         required: false
         multivalued: false
-        inlined: true
+        inlined: false
       identifiers:
         annotations:
           source_attribute_name:
@@ -9018,13 +8181,20 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: appliesToIds
-        description: An API attribute added for appliesTo
-        title: API Attribute for appliesTo
+          uml_role:
+            tag: uml_role
+            value: appliesTo
+        description: A USDM relationship between the ProductOrganizationRole and either
+          the AdministrableProduct or MedicalDevice class that identifies the administrable
+          product or medical device to which the product organization role applies.
         aliases:
         - appliesToIds
-        range: string
+        required: false
         multivalued: true
-        inlined_as_list: true
+        inlined: false
+        any_of:
+        - range: AdministrableProduct
+        - range: MedicalDevice
       organization_id:
         annotations:
           source_attribute_name:
@@ -9033,49 +8203,18 @@ classes:
           source_slot_name:
             tag: source_slot_name
             value: organizationId
-        description: An API attribute added for organization
-        title: API Attribute for organization
-        aliases:
-        - organizationId
-        range: string
-        required: true
-        multivalued: false
-        inlined: true
-      applies_to:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: appliesTo
-          source_slot_name:
-            tag: source_slot_name
-            value: appliesTo
-        description: A USDM relationship between the ProductOrganizationRole and either
-          the AdministrableProduct or MedicalDevice class that identifies the administrable
-          product or medical device to which the product organization role applies.
-        aliases:
-        - appliesTo
-        required: false
-        multivalued: true
-        inlined: false
-        inlined_as_list: true
-        any_of:
-        - range: AdministrableProduct
-        - range: MedicalDevice
-      organization:
-        annotations:
-          source_attribute_name:
-            tag: source_attribute_name
-            value: organization
-          source_slot_name:
-            tag: source_slot_name
+          uml_role:
+            tag: uml_role
             value: organization
         description: A USDM relationship between the ProductOrganizationRole and Organization
           classes which identifies the organization associated with the product organization
           role.
+        aliases:
+        - organizationId
         range: Organization
-        required: false
+        required: true
         multivalued: false
-        inlined: true
+        inlined: false
   InterventionalStudyDesign:
     definition_uri: ncit:C215503
     description: The strategy that specifies the structure of an interventional trial
@@ -9418,6 +8557,7 @@ classes:
         required: true
         multivalued: true
         inlined_as_list: true
+        minimum_cardinality: 1
   ExtensionAttribute:
     mixins:
     - Base
