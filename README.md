@@ -55,6 +55,13 @@ outputs. It lists the errors, warnings and notes raised during the run: skipped/
 attributes with no CT entry, codelist problems, API-only relationships added from the OpenAPI specification, and the
 results of the cardinality audit (also available standalone as `uv run card_audit <output_dir>`).
 
+### Checking USDM files
+`uv run ref_check [files or directories]` (default: `examples/`) validates USDM JSON files against the API schema
+(`Wrapper-Input` in `docs/ddf_ra/USDM_API.yaml`) and checks every `*Id`/`*Ids` reference: it must be a string (or a
+list of strings), name an object in the same file, and point at a class allowed by the reference's range in the
+LinkML schema (`docs/releases/USDM_v4.0.0.yaml`, `--schema` to override). `examples/` holds the official CDISC USDM
+v4.0.0 example studies.
+
 ### LinkML
 A LinkML formatted YAML file will be generated for the model (Still a WIP).  There is an optional `--internal-enum` option to add the Permissible Values to the enumeration (it makes the file very large)
 
