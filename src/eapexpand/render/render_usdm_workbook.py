@@ -44,6 +44,20 @@ def _uml_role(attribute) -> str:
     return ""
 
 
+def _label_api_only(attrib: dict, attribute, owner: str, ct_content: dict) -> None:
+    """
+    API-only relationships have no CT entry of their own: label them from the CT entry
+    of the target class, marked "(API)". The class's C-code is not used, as it does not
+    identify the relationship.
+    """
+    if not (isinstance(attribute, Connector) and attribute.api_only) or attrib.get("pref_term"):
+        return
+    _target = ct_content.get(attribute.target_object.name) if attribute.target_object else None
+    _term = (_target.preferred_term if _target else None) or attribute.target_object.name
+    attrib["pref_term"] = f"{_term} (API)"
+    attrib["attribute_note"] = f"The {_term} instances of the {owner} (API)."
+
+
 def _parse_cardinality(value: Optional[str]) -> tuple[Optional[int], Optional[str]]:
     if not value:
         return None, None
@@ -191,13 +205,6 @@ def generate(
                     logger.warning(f"Unable to find {obj.name} in CT")
                     get_report().warning("Workbook: classes omitted (not in the CT)", obj.name)
                     continue  # type: Entity
-                # super classes, we need to make sure the attributes from the generalization are included, but marked as inherited
-                if obj.generalizations:
-                    _generalization = document.get_object(
-                        obj.generalizations[0].end_object_id
-                    )
-                else:
-                    _generalization = None
                 if _ct_reference is None:
                     if obj.name not in missing_references.get("objects"):
                         missing_references["objects"].append(obj.name)
@@ -227,11 +234,9 @@ def generate(
                     _attribute: Attribute
                     attrib = _output.setdefault(_exchange_name(_attribute), {})
                     if not attrib:
-                        # add a reference to show that the attribute is inherited from the generalization
-                        is_inherited = bool(
-                            _generalization
-                            and _attribute in _generalization.object_attributes
-                        )
+                        # inherited: declared on a generalization (attribute or relationship),
+                        # not on the class itself
+                        is_inherited = not any(_attribute is own for own in obj.all_attributes)
                         attrib = dict(
                             attribute_name=_exchange_name(_attribute),
                             attribute_type=_attribute.attribute_type,
@@ -265,6 +270,7 @@ def generate(
                             missing = (obj.name, _attribute.name)
                             if missing not in missing_references.get("attributes"):
                                 missing_references["attributes"].append(missing)
+                    _label_api_only(attrib, _attribute, obj.name, ct_content)
                     _output[_exchange_name(_attribute)] = attrib
                 for outgoing_connection in obj.outgoing_connections:  # type: Connector
                     print(
@@ -303,6 +309,7 @@ def generate(
                         missing = (_ct_reference.entity_name, outgoing_connection.name)
                         if missing not in missing_references.get("connections"):
                             missing_references["connections"].append(missing)
+                    _label_api_only(attrib, outgoing_connection, obj.name, ct_content)
                     existing = _output.get(attrib.get("attribute_name"))
                     if existing:
                         existing["attribute_type"] = _merge_pipe_type(
