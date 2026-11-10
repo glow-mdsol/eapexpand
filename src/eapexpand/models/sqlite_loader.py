@@ -220,6 +220,7 @@ def _add_openapi_only_relationships(api_metadata: dict, data: dict) -> None:
                 dest_card=cardinality,
                 source_object=obj,
                 target_object=target,
+                api_only=True,
             )
             obj.outgoing_connections.append(connector)
 

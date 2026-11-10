@@ -466,6 +466,8 @@ class Connector:
     # name of the attribute carrying this relationship by id in the exchange (API)
     # format, e.g. "nextId"; None when the related object is exchanged inline
     api_name: Optional[str] = field(default=None)
+    # the relationship exists in the OpenAPI specification but not in the UML model
+    api_only: bool = field(default=False)
 
     @property
     def is_reference(self) -> bool:
